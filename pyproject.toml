@@ -12,7 +12,3 @@ dev = [
     "mypy>=1.17.0",
     "ruff>=0.12.5",
 ]
-
-[mypy]
-python_version = "3.13"
-strict = true
