@@ -65,7 +65,7 @@ async def update_memory() -> None:
 
     # 创建记忆作用域
     memory_scope = MemoryManager(
-        memory_storage=memory_repository,
+        memory_repository=memory_repository,
         visible_chat_messages=chat_history,
         visible_memories=initial_memories,
         llm_ability=llm_ability
@@ -170,7 +170,7 @@ async def new_memory() -> None:
 
     # 创建记忆作用域
     memory_scope = MemoryManager(
-        memory_storage=memory_repository,
+        memory_repository=memory_repository,
         visible_chat_messages=chat_history,
         visible_memories=initial_memories,
         llm_ability=llm_ability

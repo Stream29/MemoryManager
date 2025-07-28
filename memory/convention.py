@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
-from memory.model import Memory, TextChatMessage
+from memory.model import Memory, MemoryAbstract, TextChatMessage
 
 
 class LlmModel(ABC):
@@ -77,12 +77,31 @@ class MemoryRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def fetch_all_memories(self) -> Sequence[Memory]:
+    async def fetch_memory_by_name(self, name: str) -> Memory | None:
         """
-        Retrieve all memories from the repository.
+        Retrieve a specific memory by its name.
+        
+        Args:
+            name: The name of the memory to retrieve
+            
+        Returns:
+            The memory with the specified name, or None if not found
+            
+        Raises:
+            NotImplementedError: Must be implemented by subclasses
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def fetch_all_memories_abstract(self) -> Sequence[MemoryAbstract]:
+        """
+        Retrieve all memory abstracts from the repository.
+        
+        Returns lightweight MemoryAbstract objects containing only name and abstract,
+        avoiding the potentially large memory_block content to reduce network and memory burden.
         
         Returns:
-            Sequence of all stored memories
+            Sequence of all stored memory abstracts
             
         Raises:
             NotImplementedError: Must be implemented by subclasses

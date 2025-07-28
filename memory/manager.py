@@ -20,19 +20,19 @@ class MemoryManager:
     LLM abilities for processing updates.
     
     Attributes:
-        memory_storage: Repository for persistent memory storage
+        memory_repository: Repository for persistent memory storage
         visible_chat_messages: Chat messages visible in this manager
         visible_memories: Memories visible in this manager
         llm_ability: LLM capabilities for memory processing
     """
-    memory_storage: Final[MemoryRepository]
+    memory_repository: Final[MemoryRepository]
     visible_chat_messages: Final[Sequence[TextChatMessage]]
     visible_memories: Final[Sequence[Memory]]
     llm_ability: Final["LlmAbility"]
     
     def __init__(
         self,
-        memory_storage: MemoryRepository,
+        memory_repository: MemoryRepository,
         visible_chat_messages: Sequence[TextChatMessage],
         visible_memories: Sequence[Memory],
         llm_ability: "LlmAbility"
@@ -41,12 +41,12 @@ class MemoryManager:
         Initialize a new MemoryManager.
         
         Args:
-            memory_storage: Repository for persistent memory storage
+            memory_repository: Repository for persistent memory storage
             visible_chat_messages: Chat messages visible in this manager
             visible_memories: Memories visible in this manager
             llm_ability: LLM capabilities for memory processing
         """
-        self.memory_storage = memory_storage
+        self.memory_repository = memory_repository
         self.visible_chat_messages = visible_chat_messages
         self.visible_memories = visible_memories
         self.llm_ability = llm_ability
@@ -71,9 +71,9 @@ class MemoryManager:
         if any(x.name == memory.name for x in self.visible_memories):
             raise ValueError(f"Memory with name {memory.name} already exists")
         
-        await self.memory_storage.add_memory(memory)
+        await self.memory_repository.add_memory(memory)
         return MemoryManager(
-            memory_storage=self.memory_storage,
+            memory_repository=self.memory_repository,
             visible_chat_messages=self.visible_chat_messages,
             visible_memories=[*self.visible_memories, memory],
             llm_ability=self.llm_ability
@@ -127,9 +127,9 @@ class MemoryManager:
         new_visible_memories: MutableSequence[Memory] = [*self.visible_memories]
         new_visible_memories.remove(memory)
         new_visible_memories.append(memory)
-        await self.memory_storage.update_memory(memory)
+        await self.memory_repository.update_memory(memory)
         return MemoryManager(
-            memory_storage=self.memory_storage,
+            memory_repository=self.memory_repository,
             visible_chat_messages=self.visible_chat_messages,
             visible_memories=new_visible_memories,
             llm_ability=self.llm_ability

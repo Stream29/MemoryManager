@@ -2,7 +2,7 @@ from collections.abc import MutableSequence, Sequence
 from typing import Final, final, override
 
 from memory.convention import MemoryRepository
-from memory.model import Memory
+from memory.model import Memory, MemoryAbstract
 
 
 @final
@@ -88,11 +88,30 @@ class InMemoryMemoryRepository(MemoryRepository):
         self.__add_memory_impl(memory)
 
     @override
-    async def fetch_all_memories(self) -> Sequence[Memory]:
+    async def fetch_memory_by_name(self, name: str) -> Memory | None:
         """
-        Retrieve all memories from the repository.
+        Retrieve a specific memory by its name.
+        
+        Args:
+            name: The name of the memory to retrieve
+            
+        Returns:
+            The memory with the specified name, or None if not found
+        """
+        for memory in self._delegate:
+            if memory.name == name:
+                return memory
+        return None
+
+    @override
+    async def fetch_all_memories_abstract(self) -> Sequence[MemoryAbstract]:
+        """
+        Retrieve all memory abstracts from the repository.
+        
+        Returns lightweight MemoryAbstract objects containing only name and abstract,
+        avoiding the potentially large memory_block content to reduce network and memory burden.
         
         Returns:
-            Sequence of all stored memories
+            Sequence of all stored memory abstracts
         """
-        return self._delegate
+        return [MemoryAbstract(name=memory.name, abstract=memory.abstract) for memory in self._delegate]
