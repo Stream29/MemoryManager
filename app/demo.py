@@ -66,7 +66,6 @@ async def update_memory() -> None:
     # 创建记忆作用域
     memory_scope = MemoryManager(
         memory_repository=memory_repository,
-        visible_chat_messages=chat_history,
         visible_memories=initial_memories,
         llm_ability=llm_ability
     )
@@ -88,7 +87,7 @@ async def update_memory() -> None:
 
     try:
         # 执行记忆更新
-        updated_memory_scope = await memory_scope.update_all_memories()
+        updated_memory_scope = await memory_scope.update_all_memories(chat_history)
 
         print("✅ 记忆更新完成！\n")
 
@@ -171,7 +170,6 @@ async def new_memory() -> None:
     # 创建记忆作用域
     memory_scope = MemoryManager(
         memory_repository=memory_repository,
-        visible_chat_messages=chat_history,
         visible_memories=initial_memories,
         llm_ability=llm_ability
     )
@@ -193,7 +191,7 @@ async def new_memory() -> None:
 
     try:
         # 执行新记忆创建
-        updated_memory_scope = await memory_scope.create_new_memories()
+        updated_memory_scope = await memory_scope.create_new_memories(chat_history)
 
         print("✅ 新记忆创建完成！\n")
 
@@ -288,7 +286,6 @@ async def memory_relevance_sorting() -> None:
     # 创建初始记忆作用域
     memory_scope = MemoryManager(
         memory_repository=memory_repository,
-        visible_chat_messages=[],
         visible_memories=initial_memories,
         llm_ability=llm_ability
     )
