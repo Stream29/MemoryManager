@@ -230,3 +230,202 @@ async def new_memory() -> None:
         print(f"❌ 新记忆创建过程中出现错误: {e}")
         print("这可能是由于API配置问题或网络连接问题导致的。")
         print("请检查.env文件中的DASHSCOPE_API_KEY配置。")
+
+
+async def memory_relevance_sorting() -> None:
+    """
+    Demonstrate the memory relevance sorting functionality.
+    
+    Creates initial memories, simulates three different conversation scenarios,
+    and shows how the system intelligently sorts and selects the most relevant
+    memories based on conversation context using LLM analysis and relevance counting.
+    """
+    print("=== 记忆相关度排序更新测试Demo ===\n")
+
+    # 初始化组件
+    llm_model = QwenModel()
+    memory_repository = InMemoryMemoryRepository()
+    llm_ability = LlmAbility(llm_model)
+
+    # 创建测试数据 - 初始记忆（创建更多记忆以展示排序效果）
+    initial_memories = [
+        Memory(
+            name="user_work_background",
+            abstract="用户的工作背景和职业信息",
+            memory_block="用户是一名软件工程师，有3年的开发经验，主要使用Java和Python进行后端开发。"
+        ),
+        Memory(
+            name="user_hobbies",
+            abstract="用户的兴趣爱好",
+            memory_block="用户喜欢阅读科幻小说，特别喜欢《三体》系列。业余时间喜欢打篮球和听音乐。"
+        ),
+        Memory(
+            name="user_learning_goals",
+            abstract="用户的学习目标和计划",
+            memory_block="用户希望学习机器学习和人工智能技术，计划在未来一年内转向AI领域。"
+        ),
+        Memory(
+            name="user_travel_experience",
+            abstract="用户的旅行经历",
+            memory_block="用户去年去了日本旅行，对日本的文化和美食印象深刻，特别喜欢京都的古建筑。"
+        ),
+        Memory(
+            name="user_food_preferences",
+            abstract="用户的饮食偏好",
+            memory_block="用户喜欢吃辣的食物，特别是川菜和湘菜。不太喜欢甜食，但对咖啡很有研究。"
+        ),
+        Memory(
+            name="user_tech_interests",
+            abstract="用户的技术兴趣和关注点",
+            memory_block="用户对云计算和微服务架构很感兴趣，最近在学习Docker和Kubernetes。"
+        )
+    ]
+
+    # 添加初始记忆到存储库
+    for memory in initial_memories:
+        await memory_repository.add_memory(memory)
+
+    # 创建初始记忆作用域
+    memory_scope = MemoryManager(
+        memory_repository=memory_repository,
+        visible_chat_messages=[],
+        visible_memories=initial_memories,
+        llm_ability=llm_ability
+    )
+
+    print("📝 初始记忆状态:")
+    for i, memory in enumerate(memory_scope.visible_memories, 1):
+        print(f"{i}. 记忆名称: {memory.name}")
+        print(f"   摘要: {memory.abstract}")
+        print(f"   内容: {memory.memory_block}")
+        print()
+
+    print(f"📊 初始相关度计数: {memory_scope.relevance_map}")
+    print()
+
+    # 第一次对话更新 - 关于工作和技术的对话
+    print("🔄 第一次对话更新 - 工作和技术话题")
+    print("=" * 50)
+    
+    first_chat = [
+        TextChatMessage(role="user", text="最近在公司里开始使用Docker容器化部署"),
+        TextChatMessage(role="assistant", text="Docker确实是现代开发中很重要的技术。你们是怎么应用的？"),
+        TextChatMessage(role="user", text="我们把Java应用打包成Docker镜像，然后部署到Kubernetes集群上"),
+        TextChatMessage(role="assistant", text="这是很好的实践！Kubernetes能很好地管理容器化应用。")
+    ]
+
+    print("💬 第一次对话内容:")
+    for i, message in enumerate(first_chat, 1):
+        print(f"{i}. {message.role}: {message.text}")
+    print()
+
+    try:
+        # 执行第一次记忆相关度更新，保留前3个最相关的记忆
+        updated_scope_1 = await memory_scope.update_visible_memories(first_chat, n=3)
+        
+        print("✅ 第一次更新完成！")
+        print(f"📊 更新后相关度计数: {updated_scope_1.relevance_map}")
+        print()
+        
+        print("📝 第一次更新后可见记忆 (前3个最相关):")
+        for i, memory in enumerate(updated_scope_1.visible_memories, 1):
+            relevance_count = updated_scope_1.relevance_map.get(memory.name, 0)
+            print(f"{i}. 记忆名称: {memory.name} (相关度: {relevance_count})")
+            print(f"   摘要: {memory.abstract}")
+            print()
+
+        # 第二次对话更新 - 关于旅行和文化的对话
+        print("🔄 第二次对话更新 - 旅行和文化话题")
+        print("=" * 50)
+        
+        second_chat = [
+            TextChatMessage(role="user", text="我在考虑下次假期去哪里旅行"),
+            TextChatMessage(role="assistant", text="有什么特别想去的地方吗？"),
+            TextChatMessage(role="user", text="想去欧洲看看，特别是意大利的古建筑和艺术"),
+            TextChatMessage(role="assistant", text="意大利确实有很多历史悠久的建筑，就像你之前去日本时看到的京都古建筑一样。") # noqa: E501
+        ]
+
+        print("💬 第二次对话内容:")
+        for i, message in enumerate(second_chat, 1):
+            print(f"{i}. {message.role}: {message.text}")
+        print()
+
+        # 执行第二次记忆相关度更新
+        updated_scope_2 = await updated_scope_1.update_visible_memories(second_chat, n=3)
+        
+        print("✅ 第二次更新完成！")
+        print(f"📊 更新后相关度计数: {updated_scope_2.relevance_map}")
+        print()
+        
+        print("📝 第二次更新后可见记忆 (前3个最相关):")
+        for i, memory in enumerate(updated_scope_2.visible_memories, 1):
+            relevance_count = updated_scope_2.relevance_map.get(memory.name, 0)
+            print(f"{i}. 记忆名称: {memory.name} (相关度: {relevance_count})")
+            print(f"   摘要: {memory.abstract}")
+            print()
+
+        # 第三次对话更新 - 关于学习和AI的对话
+        print("🔄 第三次对话更新 - 学习和AI话题")
+        print("=" * 50)
+        
+        third_chat = [
+            TextChatMessage(role="user", text="我最近开始学习机器学习了"),
+            TextChatMessage(role="assistant", text="太好了！这正符合你的学习目标。你从哪个方面开始学的？"),
+            TextChatMessage(role="user", text="先从Python的机器学习库开始，比如scikit-learn"),
+            TextChatMessage(role="assistant", text="这是很好的起点！结合你的Python开发经验，应该会学得很快。")
+        ]
+
+        print("💬 第三次对话内容:")
+        for i, message in enumerate(third_chat, 1):
+            print(f"{i}. {message.role}: {message.text}")
+        print()
+
+        # 执行第三次记忆相关度更新
+        updated_scope_3 = await updated_scope_2.update_visible_memories(third_chat, n=3)
+        
+        print("✅ 第三次更新完成！")
+        print(f"📊 更新后相关度计数: {updated_scope_3.relevance_map}")
+        print()
+        
+        print("📝 第三次更新后可见记忆 (前3个最相关):")
+        for i, memory in enumerate(updated_scope_3.visible_memories, 1):
+            relevance_count = updated_scope_3.relevance_map.get(memory.name, 0)
+            print(f"{i}. 记忆名称: {memory.name} (相关度: {relevance_count})")
+            print(f"   摘要: {memory.abstract}")
+            print()
+
+        # 显示三次更新的效果对比
+        print("📈 三次更新效果对比:")
+        print("=" * 50)
+        
+        print("🔍 相关度变化趋势:")
+        all_memory_names: set[str] = set()
+        for scope in [memory_scope, updated_scope_1, updated_scope_2, updated_scope_3]:
+            all_memory_names.update(scope.relevance_map.keys())
+        
+        for memory_name in sorted(all_memory_names):
+            counts = [
+                memory_scope.relevance_map.get(memory_name, 0),
+                updated_scope_1.relevance_map.get(memory_name, 0),
+                updated_scope_2.relevance_map.get(memory_name, 0),
+                updated_scope_3.relevance_map.get(memory_name, 0)
+            ]
+            print(f"📋 {memory_name}: {counts[0]} → {counts[1]} → {counts[2]} → {counts[3]}")
+        
+        print()
+        print("🎯 可见记忆变化:")
+        scopes = [
+            ("初始状态", memory_scope),
+            ("第一次更新后", updated_scope_1),
+            ("第二次更新后", updated_scope_2),
+            ("第三次更新后", updated_scope_3)
+        ]
+        
+        for stage_name, scope in scopes:
+            visible_names = [memory.name for memory in scope.visible_memories]
+            print(f"📌 {stage_name}: {visible_names}")
+
+    except Exception as e:
+        print(f"❌ 记忆相关度排序过程中出现错误: {e}")
+        print("这可能是由于API配置问题或网络连接问题导致的。")
+        print("请检查.env文件中的DASHSCOPE_API_KEY配置。")

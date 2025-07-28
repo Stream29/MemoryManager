@@ -3,15 +3,18 @@ import re
 from asyncio import gather
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Final, TypeVar, final
+from typing import Final, TypeVar, final, TYPE_CHECKING
 
 from pydantic import BaseModel
 
 from memory.convention import LlmModel
-from memory.manager import MemoryManager
+if TYPE_CHECKING:
+    from memory.manager import MemoryManager
 from memory.model import (
     CreateNewMemoriesRequest,
     CreateNewMemoriesResponse,
+    FindAssociatedMemoriesRequest,
+    FindAssociatedMemoriesResponse,
     Memory,
     MemoryAbstract,
     TextChatMessage,
@@ -20,7 +23,12 @@ from memory.model import (
     UpdateSingleMemoryRequest,
     UpdateSingleMemoryResponse,
 )
-from memory.prompt import new_memory_system_prompt, update_memories_system_prompt, update_single_memory_system_prompt
+from memory.prompt import (
+    find_associated_memories_system_prompt,
+    new_memory_system_prompt,
+    update_memories_system_prompt,
+    update_single_memory_system_prompt,
+)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -104,7 +112,7 @@ class LlmAbility:
         )
         return LlmAbility._safe_cast(response_type, response_str)
 
-    async def update_memory_by_name(self, memory_scope: MemoryManager, name: str) -> Memory:
+    async def update_memory_by_name(self, memory_scope: "MemoryManager", name: str) -> Memory:
         """
         Update a specific memory by name using LLM analysis.
         
@@ -153,7 +161,7 @@ class LlmAbility:
         )
         
 
-    async def update_all_memories(self, memory_scope: MemoryManager) -> MemoryManager:
+    async def update_all_memories(self, memory_scope: "MemoryManager") -> "MemoryManager":
         """
         Update all relevant memories in the scope based on chat history.
         
@@ -197,7 +205,7 @@ class LlmAbility:
             new_memory_manager = await new_memory_manager.update_memory(memory)
         return new_memory_manager
 
-    async def create_new_memories(self, memory_scope: MemoryManager) -> Sequence[Memory]:
+    async def create_new_memories(self, memory_scope: "MemoryManager") -> Sequence[Memory]:
         """
         Create new memories based on chat history and existing memories.
         
@@ -229,3 +237,41 @@ class LlmAbility:
         )
         
         return response.new_memories
+
+    async def find_associated_memories(
+            self,
+            memory_scope: "MemoryManager",
+            chat_messages: Sequence[TextChatMessage]
+    ) -> Sequence[str]:
+        """
+        Find memories that are associated with the given chat messages.
+        
+        Analyzes the chat messages against existing memories to determine
+        which memories are most relevant to the current conversation context.
+        
+        Args:
+            memory_scope: The memory manager containing existing memories
+            chat_messages: Chat messages to find associations with
+            
+        Returns:
+            Sequence of memory names that are associated with the chat messages
+        """
+        # Create request for finding associated memories
+        request = FindAssociatedMemoriesRequest(
+            current_memories=[
+                MemoryAbstract(
+                    name=memory.name,
+                    abstract=memory.abstract
+                ) for memory in memory_scope.visible_memories
+            ],
+            chat_messages=chat_messages
+        )
+        
+        # Find associated memories using LLM
+        response: Final[FindAssociatedMemoriesResponse] = await self._structured_generate(
+            request,
+            find_associated_memories_system_prompt,
+            FindAssociatedMemoriesResponse
+        )
+        
+        return response.associated_memories

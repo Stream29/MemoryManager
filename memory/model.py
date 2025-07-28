@@ -138,3 +138,28 @@ class CreateNewMemoriesResponse(BaseModel):
         new_memories: New memory objects that should be created
     """
     new_memories: Final[Sequence[Memory]] # type: ignore[misc]
+
+@final
+class FindAssociatedMemoriesRequest(BaseModel):
+    """
+    Request model for finding memories associated with chat messages.
+    
+    Contains current existing memories and chat messages to help the LLM
+    determine which memories are most relevant to the current conversation.
+    
+    Attributes:
+        current_memories: Existing memory abstracts to evaluate for relevance
+        chat_messages: Chat messages to find associations with
+    """
+    current_memories: Final[Sequence[MemoryAbstract]] # type: ignore[misc]
+    chat_messages: Final[Sequence[TextChatMessage]] # type: ignore[misc]
+
+@final
+class FindAssociatedMemoriesResponse(BaseModel):
+    """
+    Response model containing names of memories associated with the conversation.
+    
+    Attributes:
+        associated_memories: Names of memories that are associated with the chat messages
+    """
+    associated_memories: Final[Sequence[str]] # type: ignore[misc]
