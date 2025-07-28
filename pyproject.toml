@@ -5,6 +5,7 @@ description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
     "asyncio>=3.4.3",
+    "flask>=3.1.1",
     "openai>=1.97.1",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",

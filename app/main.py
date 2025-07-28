@@ -7,7 +7,7 @@ Currently contains a placeholder main function for future implementation.
 
 from asyncio import run
 
-from app.demo import new_memory, memory_relevance_sorting
+from app.demo import memory_relevance_sorting
 
 
 async def main() -> None:

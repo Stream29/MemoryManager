@@ -1,0 +1,488 @@
+### Memory Manager REST API Tests
+### Base URL: http://localhost:8000
+
+### 1. Health Check
+GET http://localhost:8000/health
+Content-Type: application/json
+
+###
+
+### 2. Get All Memory Abstracts (Initially Empty)
+GET http://localhost:8000/memories
+Content-Type: application/json
+
+###
+
+### 3. Add First Memory - User Background
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "user_background",
+    "abstract": "用户的基本背景信息",
+    "memory_block": "用户是一名软件工程师，有3年的开发经验，主要使用Java和Python进行后端开发。"
+}
+
+###
+
+### 4. Add Second Memory - User Hobbies
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "user_hobbies",
+    "abstract": "用户的兴趣爱好",
+    "memory_block": "用户喜欢阅读科幻小说，特别喜欢《三体》系列。业余时间喜欢打篮球和听音乐。"
+}
+
+###
+
+### 5. Add Third Memory - Learning Goals
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "user_learning_goals",
+    "abstract": "用户的学习目标和计划",
+    "memory_block": "用户希望学习机器学习和人工智能技术，计划在未来一年内转向AI领域。"
+}
+
+###
+
+### 6. Add Fourth Memory - Tech Interests
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "user_tech_interests",
+    "abstract": "用户的技术兴趣和关注点",
+    "memory_block": "用户对云计算和微服务架构很感兴趣，最近在学习Docker和Kubernetes。"
+}
+
+###
+
+### 7. Get All Memory Abstracts (After Adding)
+GET http://localhost:8000/memories
+Content-Type: application/json
+
+###
+
+### 8. Get Specific Memory by Name
+GET http://localhost:8000/memories/user_background
+Content-Type: application/json
+
+###
+
+### 9. Get Non-existent Memory (Error Test)
+GET http://localhost:8000/memories/non_existent
+Content-Type: application/json
+
+###
+
+### 10. Update Memory by Name
+PUT http://localhost:8000/memories/user_background
+Content-Type: application/json
+
+{
+    "abstract": "用户的基本背景信息（已更新）",
+    "memory_block": "用户是一名高级软件工程师，有5年的开发经验，主要使用Java和Python进行后端开发。最近开始接触Go语言。"
+}
+
+###
+
+### 11. Get Updated Memory
+GET http://localhost:8000/memories/user_background
+Content-Type: application/json
+
+###
+
+### 12. Get Current Visible Memories (Initially Empty)
+GET http://localhost:8000/visible-memories
+Content-Type: application/json
+
+###
+
+### 13. Get Visible Memories with Limit
+GET http://localhost:8000/visible-memories?limit=3
+Content-Type: application/json
+
+###
+
+### 14. Get Current Relevance Map
+GET http://localhost:8000/relevance-map
+Content-Type: application/json
+
+###
+
+### 15. Find Associated Memories with Chat Messages
+POST http://localhost:8000/memories/find-associated
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "最近在公司里开始使用Docker容器化部署"
+        },
+        {
+            "role": "assistant",
+            "text": "Docker确实是现代开发中很重要的技术。你们是怎么应用的？"
+        },
+        {
+            "role": "user",
+            "text": "我们把Java应用打包成Docker镜像，然后部署到Kubernetes集群上"
+        }
+    ]
+}
+
+###
+
+### 16. Update Visible Memories Based on Relevance
+POST http://localhost:8000/memories/update-visible
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "最近在公司里开始使用Docker容器化部署"
+        },
+        {
+            "role": "assistant",
+            "text": "Docker确实是现代开发中很重要的技术。你们是怎么应用的？"
+        },
+        {
+            "role": "user",
+            "text": "我们把Java应用打包成Docker镜像，然后部署到Kubernetes集群上"
+        }
+    ],
+    "n": 2
+}
+
+###
+
+### 17. Get Updated Relevance Map
+GET http://localhost:8000/relevance-map
+Content-Type: application/json
+
+###
+
+### 18. Get Current Visible Memories After Update
+GET http://localhost:8000/visible-memories
+Content-Type: application/json
+
+###
+
+### 19. Update All Memories Based on Chat History
+POST http://localhost:8000/memories/update-all
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "我刚刚完成了一个用Spring Boot开发的微服务项目"
+        },
+        {
+            "role": "assistant",
+            "text": "很棒！Spring Boot确实是开发微服务的好选择。项目有什么特别的功能吗？"
+        },
+        {
+            "role": "user",
+            "text": "主要是用户管理和订单处理，还集成了Redis缓存和MySQL数据库"
+        }
+    ]
+}
+
+###
+
+### 20. Create New Memories Based on Chat History
+POST http://localhost:8000/memories/create-new
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "对了，我忘了告诉你，我其实还有一个副业"
+        },
+        {
+            "role": "assistant",
+            "text": "哦？什么样的副业呢？听起来很有意思。"
+        },
+        {
+            "role": "user",
+            "text": "我在业余时间做摄影师，主要拍摄婚礼和活动"
+        },
+        {
+            "role": "assistant",
+            "text": "摄影师！这是一个很有创意的副业。你做这个多久了？"
+        },
+        {
+            "role": "user",
+            "text": "大概3年了，现在每个月能有额外的收入，而且我特别喜欢捕捉人们的美好瞬间"
+        }
+    ]
+}
+
+###
+
+### 21. Get All Memories After New Creation
+GET http://localhost:8000/memories
+Content-Type: application/json
+
+###
+
+### 22. Second Update Visible Memories Test (Travel Topic)
+POST http://localhost:8000/memories/update-visible
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "我在考虑下次假期去哪里旅行"
+        },
+        {
+            "role": "assistant",
+            "text": "有什么特别想去的地方吗？"
+        },
+        {
+            "role": "user",
+            "text": "想去欧洲看看，特别是意大利的古建筑和艺术"
+        }
+    ],
+    "n": 3
+}
+
+###
+
+### 23. Third Update Visible Memories Test (AI Learning Topic)
+POST http://localhost:8000/memories/update-visible
+Content-Type: application/json
+
+{
+    "chat_messages": [
+        {
+            "role": "user",
+            "text": "我最近开始学习机器学习了"
+        },
+        {
+            "role": "assistant",
+            "text": "太好了！这正符合你的学习目标。你从哪个方面开始学的？"
+        },
+        {
+            "role": "user",
+            "text": "先从Python的机器学习库开始，比如scikit-learn"
+        }
+    ],
+    "n": 3
+}
+
+###
+
+### 24. Final Relevance Map Check
+GET http://localhost:8000/relevance-map
+Content-Type: application/json
+
+###
+
+### 25. Final Visible Memories Check
+GET http://localhost:8000/visible-memories
+Content-Type: application/json
+
+###
+
+### 26. Test Error Handling - Try to Add Duplicate Memory
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "user_background",
+    "abstract": "重复的记忆",
+    "memory_block": "这应该会失败"
+}
+
+###
+
+### 27. Test Error Handling - Missing Fields
+POST http://localhost:8000/memories
+Content-Type: application/json
+
+{
+    "name": "incomplete_memory"
+}
+
+###
+
+### 28. Delete a Memory
+DELETE http://localhost:8000/memories/user_hobbies
+Content-Type: application/json
+
+###
+
+### 29. Try to Get Deleted Memory (Should Return 404)
+GET http://localhost:8000/memories/user_hobbies
+Content-Type: application/json
+
+###
+
+### 30. Final Memory List After Deletion
+GET http://localhost:8000/memories
+Content-Type: application/json
+
+###
+
+### 31. Generate Response - Basic Conversation
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "你好，请介绍一下你自己"
+        }
+    ]
+}
+
+###
+
+### 32. Generate Response - Multi-turn Conversation
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "我想学习Python编程"
+        },
+        {
+            "role": "assistant",
+            "text": "Python是一门很好的编程语言！你想从哪个方面开始学习呢？"
+        },
+        {
+            "role": "user",
+            "text": "我想先学习基础语法，然后学习数据分析"
+        }
+    ]
+}
+
+###
+
+### 33. Generate Response - With Reasoning Disabled
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "请简单解释一下什么是机器学习"
+        }
+    ],
+    "reasoning": false
+}
+
+###
+
+### 34. Generate Response - With Reasoning Enabled (Explicit)
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "请分析一下云计算的优势和挑战"
+        }
+    ],
+    "reasoning": true
+}
+
+###
+
+### 35. Generate Response - Technical Discussion
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "我在使用Docker时遇到了容器启动失败的问题"
+        },
+        {
+            "role": "assistant",
+            "text": "容器启动失败可能有多种原因。你能提供一下具体的错误信息吗？"
+        },
+        {
+            "role": "user",
+            "text": "错误信息是：Error response from daemon: failed to create shim task"
+        }
+    ]
+}
+
+###
+
+### 36. Generate Response - Error Test: Missing Messages
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "reasoning": true
+}
+
+###
+
+### 37. Generate Response - Error Test: Empty Messages Array
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [],
+    "reasoning": true
+}
+
+###
+
+### 38. Generate Response - Error Test: Invalid Message Format
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user"
+        }
+    ]
+}
+
+###
+
+### 39. Generate Response - Error Test: Invalid Reasoning Type
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": [
+        {
+            "role": "user",
+            "text": "测试消息"
+        }
+    ],
+    "reasoning": "invalid"
+}
+
+###
+
+### 40. Generate Response - Error Test: Invalid Messages Type
+POST http://localhost:8000/generate
+Content-Type: application/json
+
+{
+    "messages": "not an array"
+}
+
+###
