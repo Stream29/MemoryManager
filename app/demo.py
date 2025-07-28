@@ -11,8 +11,8 @@ updates the memories based on new information from the conversation.
 from app.llm_model import QwenModel
 from memory.in_memory import InMemoryMemoryRepository
 from memory.llm_ability import LlmAbility
+from memory.manager import MemoryManager
 from memory.model import Memory, TextChatMessage
-from memory.scope import MemoryScope
 
 
 async def update_memory() -> None:
@@ -64,7 +64,7 @@ async def update_memory() -> None:
     ]
 
     # 创建记忆作用域
-    memory_scope = MemoryScope(
+    memory_scope = MemoryManager(
         memory_storage=memory_repository,
         visible_chat_messages=chat_history,
         visible_memories=initial_memories,
@@ -169,7 +169,7 @@ async def new_memory() -> None:
     ]
 
     # 创建记忆作用域
-    memory_scope = MemoryScope(
+    memory_scope = MemoryManager(
         memory_storage=memory_repository,
         visible_chat_messages=chat_history,
         visible_memories=initial_memories,
@@ -221,7 +221,7 @@ async def new_memory() -> None:
         else:
             print("📋 没有创建新的记忆，现有记忆已经涵盖了所有信息。")
 
-        print(f"📊 记忆统计:")
+        print("📊 记忆统计:")
         print(f"   原始记忆数量: {len(memory_scope.visible_memories)}")
         print(f"   更新后记忆数量: {len(updated_memory_scope.visible_memories)}")
         print(f"   新增记忆数量: {len(new_memories)}")

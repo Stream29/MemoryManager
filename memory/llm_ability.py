@@ -8,6 +8,7 @@ from typing import Final, TypeVar, final
 from pydantic import BaseModel
 
 from memory.convention import LlmModel
+from memory.manager import MemoryManager
 from memory.model import (
     CreateNewMemoriesRequest,
     CreateNewMemoriesResponse,
@@ -20,7 +21,6 @@ from memory.model import (
     UpdateSingleMemoryResponse,
 )
 from memory.prompt import new_memory_system_prompt, update_memories_system_prompt, update_single_memory_system_prompt
-from memory.scope import MemoryScope
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -104,7 +104,7 @@ class LlmAbility:
         )
         return LlmAbility._safe_cast(response_type, response_str)
 
-    async def update_memory_by_name(self, memory_scope: MemoryScope, name: str) -> Memory:
+    async def update_memory_by_name(self, memory_scope: MemoryManager, name: str) -> Memory:
         """
         Update a specific memory by name using LLM analysis.
         
@@ -113,7 +113,7 @@ class LlmAbility:
         existing memory content.
         
         Args:
-            memory_scope: The memory scope containing the memory to update
+            memory_scope: The memory manager containing the memory to update
             name: The name of the memory to update
             
         Returns:
@@ -130,7 +130,7 @@ class LlmAbility:
                 break
         
         if old_memory is None:
-            raise ValueError(f"Memory with name '{name}' not found in memory scope")
+            raise ValueError(f"Memory with name '{name}' not found in memory manager")
         
         # Create request for updating single memory
         request = UpdateSingleMemoryRequest(
@@ -153,7 +153,7 @@ class LlmAbility:
         )
         
 
-    async def update_all_memories(self, memory_scope: MemoryScope) -> MemoryScope:
+    async def update_all_memories(self, memory_scope: MemoryManager) -> MemoryManager:
         """
         Update all relevant memories in the scope based on chat history.
         
@@ -162,10 +162,10 @@ class LlmAbility:
         memories using LLM analysis.
         
         Args:
-            memory_scope: The memory scope containing memories to potentially update
+            memory_scope: The memory manager containing memories to potentially update
             
         Returns:
-            New MemoryScope with all relevant memories updated
+            New MemoryManager with all relevant memories updated
         """
         # Create request to determine which memories need updating
         request = UpdateMemoriesRequest(
@@ -191,13 +191,13 @@ class LlmAbility:
               for name in response.memories_to_update]
         )
         
-        # Apply all updates to create new memory scope
-        new_memory_scope = memory_scope
+        # Apply all updates to create new memory manager
+        new_memory_manager = memory_scope
         for memory in updated_memories:
-            new_memory_scope = await new_memory_scope.update_memory(memory)
-        return new_memory_scope
+            new_memory_manager = await new_memory_manager.update_memory(memory)
+        return new_memory_manager
 
-    async def create_new_memories(self, memory_scope: MemoryScope) -> Sequence[Memory]:
+    async def create_new_memories(self, memory_scope: MemoryManager) -> Sequence[Memory]:
         """
         Create new memories based on chat history and existing memories.
         
@@ -205,7 +205,7 @@ class LlmAbility:
         by existing memories and creates new memory blocks for that information.
         
         Args:
-            memory_scope: The memory scope containing existing memories and chat history
+            memory_scope: The memory manager containing existing memories and chat history
             
         Returns:
             Sequence of new Memory objects that should be created

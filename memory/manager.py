@@ -11,18 +11,18 @@ if TYPE_CHECKING:
 
 @final
 @dataclass
-class MemoryScope:
+class MemoryManager:
     """
-    Represents a scope containing memories, chat messages, and LLM capabilities.
+    Represents a manager containing memories, chat messages, and LLM capabilities.
     
-    A MemoryScope encapsulates the context needed for memory operations,
+    A MemoryManager encapsulates the context needed for memory operations,
     including the storage backend, visible memories, chat history, and
     LLM abilities for processing updates.
     
     Attributes:
         memory_storage: Repository for persistent memory storage
-        visible_chat_messages: Chat messages visible in this scope
-        visible_memories: Memories visible in this scope
+        visible_chat_messages: Chat messages visible in this manager
+        visible_memories: Memories visible in this manager
         llm_ability: LLM capabilities for memory processing
     """
     memory_storage: Final[MemoryRepository]
@@ -38,12 +38,12 @@ class MemoryScope:
         llm_ability: "LlmAbility"
     ):
         """
-        Initialize a new MemoryScope.
+        Initialize a new MemoryManager.
         
         Args:
             memory_storage: Repository for persistent memory storage
-            visible_chat_messages: Chat messages visible in this scope
-            visible_memories: Memories visible in this scope
+            visible_chat_messages: Chat messages visible in this manager
+            visible_memories: Memories visible in this manager
             llm_ability: LLM capabilities for memory processing
         """
         self.memory_storage = memory_storage
@@ -51,18 +51,18 @@ class MemoryScope:
         self.visible_memories = visible_memories
         self.llm_ability = llm_ability
 
-    async def add_memory(self, memory: Memory) -> "MemoryScope":
+    async def add_memory(self, memory: Memory) -> "MemoryManager":
         """
-        Add a new memory to the scope.
+        Add a new memory to the manager.
         
-        Creates a new MemoryScope with the added memory included in
+        Creates a new MemoryManager with the added memory included in
         both the storage and visible memories.
         
         Args:
             memory: The memory to add
             
         Returns:
-            New MemoryScope instance with the added memory
+            New MemoryManager instance with the added memory
             
         Raises:
             ValueError: If a memory with the same name already exists
@@ -72,48 +72,48 @@ class MemoryScope:
             raise ValueError(f"Memory with name {memory.name} already exists")
         
         await self.memory_storage.add_memory(memory)
-        return MemoryScope(
+        return MemoryManager(
             memory_storage=self.memory_storage,
             visible_chat_messages=self.visible_chat_messages,
             visible_memories=[*self.visible_memories, memory],
             llm_ability=self.llm_ability
         )
 
-    async def update_all_memories(self) -> "MemoryScope":
+    async def update_all_memories(self) -> "MemoryManager":
         """
-        Update all memories in the scope using LLM capabilities.
+        Update all memories in the manager using LLM capabilities.
         
         Delegates to the LLM ability to analyze chat history and update
         all relevant memories based on new information.
         
         Returns:
-            New MemoryScope instance with updated memories
+            New MemoryManager instance with updated memories
         """
         return await self.llm_ability.update_all_memories(self)
 
-    async def create_new_memories(self) -> "MemoryScope":
+    async def create_new_memories(self) -> "MemoryManager":
         """
         Create new memories based on chat history and existing memories.
         
         Delegates to the LLM ability to analyze chat history and identify
         information not covered by existing memories, then creates new
-        memory blocks and adds them to the scope.
+        memory blocks and adds them to the manager.
         
         Returns:
-            New MemoryScope instance with newly created memories added
+            New MemoryManager instance with newly created memories added
         """
         new_memories = await self.llm_ability.create_new_memories(self)
         
-        # Add all new memories to the scope
-        new_scope = self
+        # Add all new memories to the manager
+        new_manager = self
         for memory in new_memories:
-            new_scope = await new_scope.add_memory(memory)
+            new_manager = await new_manager.add_memory(memory)
         
-        return new_scope
+        return new_manager
 
-    async def update_memory(self, memory: Memory) -> "MemoryScope":
+    async def update_memory(self, memory: Memory) -> "MemoryManager":
         """
-        Update a specific memory in the scope.
+        Update a specific memory in the manager.
         
         Replaces the existing memory with the updated version in both
         the visible memories and persistent storage.
@@ -122,13 +122,13 @@ class MemoryScope:
             memory: The updated memory to replace the existing one
             
         Returns:
-            New MemoryScope instance with the updated memory
+            New MemoryManager instance with the updated memory
         """
         new_visible_memories: MutableSequence[Memory] = [*self.visible_memories]
         new_visible_memories.remove(memory)
         new_visible_memories.append(memory)
         await self.memory_storage.update_memory(memory)
-        return MemoryScope(
+        return MemoryManager(
             memory_storage=self.memory_storage,
             visible_chat_messages=self.visible_chat_messages,
             visible_memories=new_visible_memories,
