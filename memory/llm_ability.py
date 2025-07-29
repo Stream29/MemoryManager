@@ -1,6 +1,5 @@
 import json
 import re
-from asyncio import gather
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, TypeVar, final
@@ -10,7 +9,7 @@ from pydantic import BaseModel
 from memory.convention import LlmModel
 
 if TYPE_CHECKING:
-    from memory.manager import MemoryManager
+    pass
 from memory.model import (
     CreateNewMemoriesRequest,
     CreateNewMemoriesResponse,
@@ -47,7 +46,7 @@ class LlmAbility:
     Attributes:
         llm_model: The LLM model instance used for generation
     """
-    llm_model: Final[LlmModel]
+    _llm_model: Final[LlmModel]
 
     def __init__(self, llm_model: LlmModel):
         """
@@ -56,7 +55,7 @@ class LlmAbility:
         Args:
             llm_model: The LLM model to use for memory operations
         """
-        self.llm_model = llm_model
+        self._llm_model = llm_model
 
     @staticmethod
     def _safe_cast(target_type: type[T], value: str) -> T:
@@ -81,7 +80,7 @@ class LlmAbility:
         match: Final[re.Match[str] | None] = re.search(r'\{.*}', value, re.DOTALL)
         if match is None:
             raise ValueError(f"Invalid JSON string: {value}")
-        
+
         safe_string: Final[str] = match.group(0)
         json_data = json.loads(safe_string)
         return target_type.model_validate(json_data)
@@ -105,7 +104,7 @@ class LlmAbility:
             ValueError: If the LLM response cannot be parsed as valid JSON
             ValidationError: If the response doesn't match the expected schema
         """
-        response_str: Final[str] = await self.llm_model.generate(
+        response_str: Final[str] = await self._llm_model.generate(
             messages=[
                 TextChatMessage(role="system", text=system_prompt),
                 TextChatMessage(role="user", text=request.model_dump_json())
@@ -113,114 +112,54 @@ class LlmAbility:
         )
         return LlmAbility._safe_cast(response_type, response_str)
 
-    async def update_memory_by_name(
+    async def update_memory(
             self,
-            memory_manager: "MemoryManager",
-            name: str,
+            old_memory: Memory,
             chat_messages: Sequence[TextChatMessage]
     ) -> Memory:
-        """
-        Update a specific memory by name using LLM analysis.
-        
-        Finds the memory with the given name in the scope, then uses the LLM
-        to generate an updated memory block based on the chat history and
-        existing memory content.
-        
-        Args:
-            memory_manager: The memory manager containing the memory to update
-            name: The name of the memory to update
-            chat_messages:
-            
-        Returns:
-            Updated Memory object with new content but same name and abstract
-            
-        Raises:
-            ValueError: If no memory with the given name is found
-        """
-        # Find the memory by name in the visible memories
-        old_memory: Memory | None = None
-        for memory in memory_manager.visible_memories:
-            if memory.name == name:
-                old_memory = memory
-                break
-        
-        if old_memory is None:
-            raise ValueError(f"Memory with name '{name}' not found in memory manager")
-        
         # Create request for updating single memory
         request = UpdateSingleMemoryRequest(
             chat_history=chat_messages,
             old_memory=old_memory
         )
-        
+
         # Generate updated memory block using LLM
         response: Final[UpdateSingleMemoryResponse] = await self._structured_generate(
             request,
             update_single_memory_system_prompt,
             UpdateSingleMemoryResponse
         )
-        
+
         # Return updated Memory object with new content
         return Memory(
             name=old_memory.name,
             abstract=old_memory.abstract,
             memory_block=response.new_memory_block
         )
-        
 
-    async def update_all_memories(
+    async def list_memory_to_update(
             self,
-            memory_manager:
-            "MemoryManager",
+            current_memory: Sequence[MemoryAbstract],
             chat_messages: Sequence[TextChatMessage]
-    ) -> "MemoryManager":
-        """
-        Update all relevant memories in the scope based on chat history.
-        
-        First determines which memories need updating by analyzing chat history
-        and existing memory abstracts, then concurrently updates all identified
-        memories using LLM analysis.
-        
-        Args:
-            memory_manager: The memory manager containing memories to potentially update
-            chat_messages: Chat messages to analyze for relevant memories to update,
-            
-        Returns:
-            New MemoryManager with all relevant memories updated
-        """
+    ) -> Sequence[MemoryAbstract]:
         # Create request to determine which memories need updating
         request = UpdateMemoriesRequest(
             chat_history=chat_messages,
-            old_memory=[
-                MemoryAbstract(
-                    name=memory.name,
-                    abstract=memory.abstract
-                ) for memory in memory_manager.visible_memories
-            ],
+            old_memory=current_memory,
         )
-        
+
         # Get list of memory names that need updating
         response: Final[UpdateMemoriesResponse] = await self._structured_generate(
             request,
             update_memories_system_prompt,
             UpdateMemoriesResponse
         )
-        
-        # Concurrently update all identified memories
-        updated_memories: Final[Sequence[Memory]] = await gather(
-            *[self.update_memory_by_name(memory_manager=memory_manager, name=name, chat_messages=chat_messages)
-              for name in response.memories_to_update]
-        )
-        
-        # Apply all updates to create new memory manager
-        new_memory_manager = memory_manager
-        for memory in updated_memories:
-            new_memory_manager = await new_memory_manager.update_memory(memory)
-        return new_memory_manager
 
-    async def create_new_memories(
+        return [memory for memory in current_memory if memory.name in response.memories_to_update]
+
+    async def extract_new_memories(
             self,
-            memory_scope: "MemoryManager",
+            current_memories: Sequence[MemoryAbstract],
             chat_messages: Sequence[TextChatMessage]
     ) -> Sequence[Memory]:
         """
@@ -238,29 +177,24 @@ class LlmAbility:
         """
         # Create request for new memory creation
         request = CreateNewMemoriesRequest(
-            current_memories=[
-                MemoryAbstract(
-                    name=memory.name,
-                    abstract=memory.abstract
-                ) for memory in memory_scope.visible_memories
-            ],
+            current_memories=current_memories,
             chat_history=chat_messages
         )
-        
+
         # Generate new memories using LLM
         response: Final[CreateNewMemoriesResponse] = await self._structured_generate(
             request,
             new_memory_system_prompt,
             CreateNewMemoriesResponse
         )
-        
+
         return response.new_memories
 
-    async def find_associated_memories(
+    async def list_related_memories(
             self,
-            memory_scope: "MemoryManager",
+            current_memories: Sequence[MemoryAbstract],
             chat_messages: Sequence[TextChatMessage]
-    ) -> Sequence[str]:
+    ) -> Sequence[MemoryAbstract]:
         """
         Find memories that are associated with the given chat messages.
         
@@ -276,20 +210,15 @@ class LlmAbility:
         """
         # Create request for finding associated memories
         request = FindAssociatedMemoriesRequest(
-            current_memories=[
-                MemoryAbstract(
-                    name=memory.name,
-                    abstract=memory.abstract
-                ) for memory in memory_scope.visible_memories
-            ],
+            current_memories=current_memories,
             chat_messages=chat_messages
         )
-        
+
         # Find associated memories using LLM
         response: Final[FindAssociatedMemoriesResponse] = await self._structured_generate(
             request,
             find_associated_memories_system_prompt,
             FindAssociatedMemoriesResponse
         )
-        
-        return response.associated_memories
+
+        return [memory for memory in current_memories if memory.name in response.associated_memories]

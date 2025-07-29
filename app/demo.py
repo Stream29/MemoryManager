@@ -87,7 +87,7 @@ async def update_memory() -> None:
 
     try:
         # 执行记忆更新
-        updated_memory_scope = await memory_scope.update_all_memories(chat_history)
+        updated_memory_scope = await memory_scope.update_existing_memories(chat_history)
 
         print("✅ 记忆更新完成！\n")
 
@@ -191,7 +191,7 @@ async def new_memory() -> None:
 
     try:
         # 执行新记忆创建
-        updated_memory_scope = await memory_scope.create_new_memories(chat_history)
+        updated_memory_scope = await memory_scope.extract_new_memories(chat_history)
 
         print("✅ 新记忆创建完成！\n")
 
@@ -318,7 +318,7 @@ async def memory_relevance_sorting() -> None:
 
     try:
         # 执行第一次记忆相关度更新，保留前3个最相关的记忆
-        updated_scope_1 = await memory_scope.update_visible_memories(first_chat, n=3)
+        updated_scope_1 = await memory_scope.update_visible_memory_list(first_chat, limit=3)
         
         print("✅ 第一次更新完成！")
         print(f"📊 更新后相关度计数: {updated_scope_1.relevance_map}")
@@ -348,7 +348,7 @@ async def memory_relevance_sorting() -> None:
         print()
 
         # 执行第二次记忆相关度更新
-        updated_scope_2 = await updated_scope_1.update_visible_memories(second_chat, n=3)
+        updated_scope_2 = await updated_scope_1.update_visible_memory_list(second_chat, limit=3)
         
         print("✅ 第二次更新完成！")
         print(f"📊 更新后相关度计数: {updated_scope_2.relevance_map}")
@@ -378,7 +378,7 @@ async def memory_relevance_sorting() -> None:
         print()
 
         # 执行第三次记忆相关度更新
-        updated_scope_3 = await updated_scope_2.update_visible_memories(third_chat, n=3)
+        updated_scope_3 = await updated_scope_2.update_visible_memory_list(third_chat, limit=3)
         
         print("✅ 第三次更新完成！")
         print(f"📊 更新后相关度计数: {updated_scope_3.relevance_map}")

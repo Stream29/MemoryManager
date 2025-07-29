@@ -73,7 +73,7 @@ def add_memory() -> Union[Response, tuple[Response, int]]:
         )
 
         global memory_manager
-        memory_manager = run_async(memory_manager.add_memory(memory))
+        memory_manager = run_async(memory_manager.force_add_memory(memory))
         return jsonify({"message": f"Memory '{memory.name}' added successfully"}), 201
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -100,7 +100,7 @@ def update_memory_by_name(name: str) -> Union[Response, tuple[Response, int]]:
             memory_block=data["memory_block"]
         )
 
-        memory_manager = run_async(memory_manager.update_memory(updated_memory))
+        memory_manager = run_async(memory_manager.force_update_memory(updated_memory))
         return jsonify({"message": f"Memory '{name}' updated successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -127,7 +127,7 @@ def get_visible_memories() -> Union[Response, tuple[Response, int]]:
         limit = request.args.get('limit', type=int)
         if limit:
             global memory_manager
-            memory_manager = run_async(memory_manager.refresh_visible_memories(limit))
+            memory_manager = run_async(memory_manager.refresh_visible_memory_list(limit))
 
         return jsonify({"visible_memories": [{
             "name": memory.name,
@@ -156,7 +156,7 @@ def update_all_memories() -> Union[Response, tuple[Response, int]]:
         ]
 
         global memory_manager
-        memory_manager = run_async(memory_manager.update_all_memories(chat_messages))
+        memory_manager = run_async(memory_manager.update_existing_memories(chat_messages))
 
         return jsonify({
             "message": "All memories updated successfully",
@@ -184,7 +184,7 @@ def create_new_memories() -> Union[Response, tuple[Response, int]]:
 
         global memory_manager
         old_count = len(memory_manager.visible_memories)
-        memory_manager = run_async(memory_manager.create_new_memories(chat_messages))
+        memory_manager = run_async(memory_manager.extract_new_memories(chat_messages))
         new_count = len(memory_manager.visible_memories)
 
         return jsonify({
@@ -214,7 +214,7 @@ def update_visible_memories() -> Union[Response, tuple[Response, int]]:
         n = data["n"]
 
         global memory_manager
-        memory_manager = run_async(memory_manager.update_visible_memories(chat_messages, n))
+        memory_manager = run_async(memory_manager.update_visible_memory_list(chat_messages, n))
 
         return jsonify({
             "message": f"Updated visible memories to top {n} most relevant",
@@ -224,29 +224,6 @@ def update_visible_memories() -> Union[Response, tuple[Response, int]]:
                 "abstract": memory.abstract,
                 "memory_block": memory.memory_block
             } for memory in memory_manager.visible_memories]
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/memories/find-associated", methods=["POST"])
-def find_associated_memories() -> Union[Response, tuple[Response, int]]:
-    """Find memories associated with chat messages."""
-    try:
-        data = request.get_json()
-        if not data or "chat_messages" not in data:
-            return jsonify({"error": "Missing required field: chat_messages"}), 400
-
-        chat_messages = [
-            TextChatMessage(role=msg["role"], text=msg["text"])
-            for msg in data["chat_messages"]
-        ]
-
-        associated_memory_names = run_async(
-            memory_manager.llm_ability.find_associated_memories(memory_manager, chat_messages)
-        )
-
-        return jsonify({
-            "associated_memories": list(associated_memory_names)
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -281,7 +258,7 @@ def generate_response() -> Union[Response, tuple[Response, int]]:
 
         # Generate response using the LLM model
         response = run_async(
-            memory_manager.llm_ability.llm_model.generate(chat_messages, reasoning=reasoning)
+            memory_manager._llm_ability._llm_model.generate(chat_messages, reasoning=reasoning)
         )
 
         return jsonify({
