@@ -1,12 +1,16 @@
-from typing import Final
 import asyncio
-from flask import Flask, request, jsonify
+from collections.abc import Coroutine
+from typing import Any, Final, TypeVar, Union
+
+from flask import Flask, Response, jsonify, request
 
 from app.llm_model import QwenModel
 from memory.in_memory import InMemoryMemoryRepository
 from memory.llm_ability import LlmAbility
 from memory.manager import MemoryManager
 from memory.model import Memory, TextChatMessage
+
+T = TypeVar('T')
 
 memory_manager = MemoryManager(
     memory_repository=InMemoryMemoryRepository(),
@@ -15,7 +19,7 @@ memory_manager = MemoryManager(
 )
 app: Final[Flask] = Flask(__name__)
 
-def run_async(coro):
+def run_async[T](coro: Coroutine[Any, Any, T]) -> T:
     """Helper function to run async functions in Flask routes."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -25,13 +29,13 @@ def run_async(coro):
         loop.close()
 
 @app.route("/health", methods=["GET"])
-def health():
+def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "healthy", "message": "Memory Manager API is running"}
 
 # Memory Repository Endpoints
 @app.route("/memories", methods=["GET"])
-def get_all_memory_abstracts():
+def get_all_memory_abstracts() -> Union[Response, tuple[Response, int]]:
     """Get all memory abstracts from the repository."""
     try:
         abstracts = run_async(memory_manager.memory_repository.fetch_all_memories_abstract())
@@ -40,7 +44,7 @@ def get_all_memory_abstracts():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/<name>", methods=["GET"])
-def get_memory_by_name(name: str):
+def get_memory_by_name(name: str) -> Union[Response, tuple[Response, int]]:
     """Get a specific memory by name."""
     try:
         memory = run_async(memory_manager.memory_repository.fetch_memory_by_name(name))
@@ -55,7 +59,7 @@ def get_memory_by_name(name: str):
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories", methods=["POST"])
-def add_memory():
+def add_memory() -> Union[Response, tuple[Response, int]]:
     """Add a new memory to the repository."""
     try:
         data = request.get_json()
@@ -77,7 +81,7 @@ def add_memory():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/<name>", methods=["PUT"])
-def update_memory_by_name(name: str):
+def update_memory_by_name(name: str) -> Union[Response, tuple[Response, int]]:
     """Update an existing memory."""
     global memory_manager
     try:
@@ -102,7 +106,7 @@ def update_memory_by_name(name: str):
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/<name>", methods=["DELETE"])
-def delete_memory(name: str):
+def delete_memory(name: str) -> Union[Response, tuple[Response, int]]:
     """Delete a memory from the repository."""
     try:
         # Check if memory exists
@@ -117,7 +121,7 @@ def delete_memory(name: str):
 
 # Memory Manager Endpoints
 @app.route("/visible-memories", methods=["GET"])
-def get_visible_memories():
+def get_visible_memories() -> Union[Response, tuple[Response, int]]:
     """Get all visible memories in the current manager."""
     try:
         limit = request.args.get('limit', type=int)
@@ -134,12 +138,12 @@ def get_visible_memories():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/relevance-map", methods=["GET"])
-def get_relevance_map():
+def get_relevance_map() -> Response:
     """Get the current relevance map."""
     return jsonify({"relevance_map":memory_manager.relevance_map})
 
 @app.route("/memories/update-all", methods=["POST"])
-def update_all_memories():
+def update_all_memories() -> Union[Response, tuple[Response, int]]:
     """Update all memories based on chat history."""
     try:
         data = request.get_json()
@@ -166,7 +170,7 @@ def update_all_memories():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/create-new", methods=["POST"])
-def create_new_memories():
+def create_new_memories() -> Union[Response, tuple[Response, int]]:
     """Create new memories based on chat history."""
     try:
         data = request.get_json()
@@ -196,7 +200,7 @@ def create_new_memories():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/update-visible", methods=["POST"])
-def update_visible_memories():
+def update_visible_memories() -> Union[Response, tuple[Response, int]]:
     """Update visible memories based on relevance to chat messages."""
     try:
         data = request.get_json()
@@ -225,7 +229,7 @@ def update_visible_memories():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/find-associated", methods=["POST"])
-def find_associated_memories():
+def find_associated_memories() -> Union[Response, tuple[Response, int]]:
     """Find memories associated with chat messages."""
     try:
         data = request.get_json()
@@ -248,7 +252,7 @@ def find_associated_memories():
         return jsonify({"error": str(e)}), 500
 
 @app.route("/generate", methods=["POST"])
-def generate_response():
+def generate_response() -> Union[Response, tuple[Response, int]]:
     """Generate a response using the LLM model."""
     try:
         data = request.get_json()
@@ -288,11 +292,11 @@ def generate_response():
         return jsonify({"error": str(e)}), 500
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found(error: Any) -> tuple[Response, int]:
     return jsonify({"error": "Endpoint not found"}), 404
 
 @app.errorhandler(500)
-def internal_error(error):
+def internal_error(error: Any) -> tuple[Response, int]:
     print(str(error))
     return jsonify({"error": "Internal server error"}), 500
 

@@ -1,5 +1,5 @@
 import os
-from asyncio import Lock, Queue, create_task
+from asyncio import Queue, create_task
 from collections.abc import Sequence
 from typing import Final, Literal, cast, final, override
 
