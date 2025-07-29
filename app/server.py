@@ -35,7 +35,7 @@ def get_all_memory_abstracts():
     """Get all memory abstracts from the repository."""
     try:
         abstracts = run_async(memory_manager.memory_repository.fetch_all_memories_abstract())
-        return jsonify([{"name": abstract.name, "abstract": abstract.abstract} for abstract in abstracts])
+        return jsonify({"memories":[{"name": abstract.name, "abstract": abstract.abstract} for abstract in abstracts]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -125,18 +125,18 @@ def get_visible_memories():
             global memory_manager
             memory_manager = run_async(memory_manager.refresh_visible_memories(limit))
 
-        return jsonify([{
+        return jsonify({"visible_memories": [{
             "name": memory.name,
             "abstract": memory.abstract,
             "memory_block": memory.memory_block
-        } for memory in memory_manager.visible_memories])
+        } for memory in memory_manager.visible_memories]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/relevance-map", methods=["GET"])
 def get_relevance_map():
     """Get the current relevance map."""
-    return jsonify(memory_manager.relevance_map)
+    return jsonify({"relevance_map":memory_manager.relevance_map})
 
 @app.route("/memories/update-all", methods=["POST"])
 def update_all_memories():
@@ -185,13 +185,14 @@ def create_new_memories():
 
         return jsonify({
             "message": f"Created {new_count - old_count} new memories",
-            "visible_memories": [{
+            "memories": [{
                 "name": memory.name,
                 "abstract": memory.abstract,
                 "memory_block": memory.memory_block
             } for memory in memory_manager.visible_memories]
         })
     except Exception as e:
+        print(str(e))
         return jsonify({"error": str(e)}), 500
 
 @app.route("/memories/update-visible", methods=["POST"])
@@ -292,6 +293,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
+    print(str(error))
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == "__main__":

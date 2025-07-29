@@ -18,9 +18,6 @@ openai_client: Final[AsyncOpenAI] = AsyncOpenAI(
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
 
-console_lock: Lock = Lock()
-
-
 async def generate(messages: Sequence[TextChatMessage], reasoning: bool = True, ) -> str:
     result: Final[ChatCompletion | AsyncStream[ChatCompletionChunk]] = await openai_client.chat.completions.create(
         model=cast(Literal["gpt-4o"], "qwen-turbo-2025-07-15"),
@@ -42,16 +39,16 @@ async def generate(messages: Sequence[TextChatMessage], reasoning: bool = True, 
                 break
             print(text_chunk, end="", flush=True)
 
-    create_task(print_worker())
+    task = create_task(print_worker())
 
-    async with console_lock:
-        async for chunk in result:
-            delta: ChoiceDelta = chunk.choices[0].delta
-            text: str = delta.content or ""
-            buffer += text
-            queue.put_nowait(text)
-            queue.put_nowait((delta.model_extra or {}).get("reasoning_content") or "")
-        queue.put_nowait(None)
+    async for chunk in result:
+        delta: ChoiceDelta = chunk.choices[0].delta
+        text: str = delta.content or ""
+        buffer += text
+        queue.put_nowait(text)
+        queue.put_nowait((delta.model_extra or {}).get("reasoning_content") or "")
+    queue.put_nowait(None)
+    await task
     return buffer
 
 

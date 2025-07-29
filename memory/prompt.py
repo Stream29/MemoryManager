@@ -144,7 +144,7 @@ Both your input and output should be in JSON format.
     "properties": {
         "new_memory_block": {
             "type": "string",
-            "description": "The updated memory block. You should keep all the information in the old memory block, and new information from `chat_history`."
+            "description": "The updated memory block. You should keep all the information in the old memory block, and new information from `chat_history`. You should address user as 'user' and LLM as 'assistant'."
         }
     },
     "required": [
@@ -235,7 +235,7 @@ Both your input and output should be in JSON format.
                     },
                     "memory_block": {
                         "type": "string",
-                        "description": "The content of the memory block."
+                        "description": "The content of the memory block. You should address user as 'user' and LLM as 'assistant'."
                     }
                 },
                 "required": [
