@@ -16,6 +16,10 @@ class MemoryManager:
     including the storage backend, visible memories, and LLM abilities 
     for processing updates.
     
+    The MemoryManager provides two types of operations:
+    1. Basic operations: force_add_memory, force_update_memory, force_update_relevance_map
+    2. High-level operations: Operations that combine basic operations with LLM capabilities
+    
     Attributes:
         memory_repository: Repository for persistent memory storage
         visible_memories: Memories visible in this manager
@@ -77,6 +81,15 @@ class MemoryManager:
         )
 
     async def force_update_relevance_map(self, delta_map: Mapping[str, int]) -> "MemoryManager":
+        """
+        Update the relevance map with delta values.
+        
+        Args:
+            delta_map: Mapping of memory names to delta relevance values to add
+            
+        Returns:
+            New MemoryManager instance with updated relevance map
+        """
         new_relevance_map: Final[MutableMapping[str, int]] = {**self.relevance_map, **delta_map}
         for name, delta_value in delta_map.items():
             if name in new_relevance_map:
@@ -119,6 +132,16 @@ class MemoryManager:
             chat_messages: Sequence[TextChatMessage],
             delta: int
     ) -> "MemoryManager":
+        """
+        Perform a full update cycle: create new memories, update existing ones, and update relevance.
+        
+        Args:
+            chat_messages: Chat messages to analyze for memory operations
+            delta: The delta value to add to relevance counts of related memories
+            
+        Returns:
+            New MemoryManager instance with all updates applied
+        """
         current_memory_list: Final[
             Sequence[MemoryAbstract]] = await self.memory_repository.fetch_all_memories_abstract()
         new_memories, related_memories, updated_memories = await gather(
@@ -243,6 +266,16 @@ class MemoryManager:
         )
 
     async def update_relevance_map(self, chat_messages: Sequence[TextChatMessage], delta: int) -> "MemoryManager":
+        """
+        Update relevance map based on memories related to chat messages.
+        
+        Args:
+            chat_messages: Chat messages to analyze for related memories
+            delta: The delta value to add to relevance counts
+            
+        Returns:
+            New MemoryManager instance with updated relevance map
+        """
         related_memories_list: Final[Sequence[MemoryAbstract]] = \
             await self._llm_ability.list_related_memories(
                 await self.memory_repository.fetch_all_memories_abstract(),
@@ -261,6 +294,21 @@ class MemoryManager:
             limit: int,
             delta: int = 1
     ) -> "MemoryManager":
+        """
+        Update visible memories based on relevance to chat messages.
+        
+        Uses LLM to find memories associated with the given chat messages,
+        updates relevance counts, and selects the top n most relevant
+        memories to be visible in the new MemoryManager.
+        
+        Args:
+            chat_messages: Chat messages to find memory associations with
+            limit: Number of most relevant memories to keep visible
+            delta: The delta value to add to relevance counts of related memories
+            
+        Returns:
+            New MemoryManager instance with top n most relevant memories
+        """
         return await (await self.update_relevance_map(chat_messages, delta)).refresh_visible_memory_list(limit)
 
     async def _get_updated_memory(
@@ -268,6 +316,19 @@ class MemoryManager:
             memory_abstract: MemoryAbstract,
             chat_messages: Sequence[TextChatMessage]
     ) -> Memory:
+        """
+        Get an updated memory based on chat messages.
+        
+        Args:
+            memory_abstract: The abstract of the memory to update
+            chat_messages: Chat messages to analyze for memory updates
+            
+        Returns:
+            Updated Memory object
+            
+        Raises:
+            ValueError: If the memory with the given abstract does not exist
+        """
         old_memory: Final[Memory | None] = await self.memory_repository.fetch_memory_by_name(memory_abstract.name)
         if old_memory is None:
             raise ValueError(f"Memory with abstract {memory_abstract.model_dump_json()} does not exist")
@@ -281,6 +342,16 @@ class MemoryManager:
             current_memories: Sequence[MemoryAbstract],
             chat_messages: Sequence[TextChatMessage]
     ) -> Sequence[Memory]:
+        """
+        Get updated memories based on chat messages.
+        
+        Args:
+            current_memories: Current memory abstracts to consider for updates
+            chat_messages: Chat messages to analyze for memory updates
+            
+        Returns:
+            Sequence of updated Memory objects
+        """
         memories_to_update: Final[Sequence[MemoryAbstract]] = await self._llm_ability.list_memory_to_update(
             current_memories,
             chat_messages

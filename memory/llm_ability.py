@@ -43,8 +43,13 @@ class LlmAbility:
     intelligent memory updates based on chat history and existing memories.
     It provides structured generation capabilities and memory update logic.
     
+    The LlmAbility provides stateless functions for processing memory data:
+    1. Memory Updating Functions: update_memory, list_memory_to_update
+    2. Memory Creation Functions: extract_new_memories
+    3. Memory Association Functions: list_related_memories
+    
     Attributes:
-        llm_model: The LLM model instance used for generation
+        _llm_model: The LLM model instance used for generation
     """
     _llm_model: Final[LlmModel]
 
@@ -117,6 +122,16 @@ class LlmAbility:
             old_memory: Memory,
             chat_messages: Sequence[TextChatMessage]
     ) -> Memory:
+        """
+        Update a single memory based on chat history.
+        
+        Args:
+            old_memory: The memory to update
+            chat_messages: Chat messages to analyze for memory updates
+            
+        Returns:
+            Updated Memory object with new content
+        """
         # Create request for updating single memory
         request = UpdateSingleMemoryRequest(
             chat_history=chat_messages,
@@ -142,6 +157,16 @@ class LlmAbility:
             current_memory: Sequence[MemoryAbstract],
             chat_messages: Sequence[TextChatMessage]
     ) -> Sequence[MemoryAbstract]:
+        """
+        Determine which memories should be updated based on chat messages.
+        
+        Args:
+            current_memory: Current memory abstracts to consider for updates
+            chat_messages: Chat messages to analyze for memory updates
+            
+        Returns:
+            Sequence of MemoryAbstract objects that should be updated
+        """
         # Create request to determine which memories need updating
         request = UpdateMemoriesRequest(
             chat_history=chat_messages,
@@ -169,7 +194,7 @@ class LlmAbility:
         by existing memories and creates new memory blocks for that information.
         
         Args:
-            memory_scope: The memory manager containing existing memories
+            current_memories: Current memory abstracts to consider
             chat_messages: Chat messages to analyze for new memory creation
             
         Returns:
@@ -202,11 +227,11 @@ class LlmAbility:
         which memories are most relevant to the current conversation context.
         
         Args:
-            memory_scope: The memory manager containing existing memories
+            current_memories: Current memory abstracts to consider
             chat_messages: Chat messages to find associations with
             
         Returns:
-            Sequence of memory names that are associated with the chat messages
+            Sequence of MemoryAbstract objects that are associated with the chat messages
         """
         # Create request for finding associated memories
         request = FindAssociatedMemoriesRequest(
