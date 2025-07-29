@@ -8,6 +8,7 @@ The demo creates initial memories, simulates a chat conversation, and then
 updates the memories based on new information from the conversation.
 """
 
+import asyncio
 from app.llm_model import QwenModel
 from memory.in_memory import InMemoryMemoryRepository
 from memory.llm_ability import LlmAbility
@@ -426,3 +427,54 @@ async def memory_relevance_sorting() -> None:
         print(f"❌ 记忆相关度排序过程中出现错误: {e}")
         print("这可能是由于API配置问题或网络连接问题导致的。")
         print("请检查.env文件中的DASHSCOPE_API_KEY配置。")
+
+
+async def main() -> None:
+    """
+    Main entry point for the demo.
+    
+    Runs all three demonstration functions in sequence:
+    1. Update existing memories
+    2. Create new memories
+    3. Sort memories by relevance
+    """
+    print("\n" + "=" * 80)
+    print("记忆管理系统演示")
+    print("=" * 80 + "\n")
+    
+    print("演示将依次展示三个核心功能：")
+    print("1. 更新已有记忆 - 根据对话内容智能更新现有记忆")
+    print("2. 提取新记忆 - 从对话中提取新的记忆内容")
+    print("3. 记忆相关度排序 - 根据对话内容调整记忆的可见性\n")
+    
+    try:
+        # 演示1：更新已有记忆
+        print("\n" + "=" * 80)
+        print("演示1：更新已有记忆")
+        print("=" * 80)
+        await update_memory()
+        
+        # 演示2：提取新记忆
+        print("\n" + "=" * 80)
+        print("演示2：提取新记忆")
+        print("=" * 80)
+        await new_memory()
+        
+        # 演示3：记忆相关度排序
+        print("\n" + "=" * 80)
+        print("演示3：记忆相关度排序")
+        print("=" * 80)
+        await memory_relevance_sorting()
+        
+        print("\n" + "=" * 80)
+        print("演示完成！")
+        print("=" * 80)
+        
+    except Exception as e:
+        print(f"❌ 演示过程中出现错误: {e}")
+        print("这可能是由于API配置问题或网络连接问题导致的。")
+        print("请检查.env文件中的DASHSCOPE_API_KEY配置。")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

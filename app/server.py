@@ -12,10 +12,14 @@ from memory.model import Memory, TextChatMessage
 
 T = TypeVar('T')
 
+# Create a separate LLM model instance for direct operations
+llm_model = QwenModel()
+
+# Create the memory manager with its own LLM ability
 memory_manager = MemoryManager(
     memory_repository=InMemoryMemoryRepository(),
     visible_memories=[],
-    llm_ability=LlmAbility(QwenModel())
+    llm_ability=LlmAbility(llm_model)
 )
 app: Final[Flask] = Flask(__name__)
 
@@ -142,9 +146,38 @@ def get_relevance_map() -> Response:
     """Get the current relevance map."""
     return jsonify({"relevance_map":memory_manager.relevance_map})
 
-@app.route("/memories/update-all", methods=["POST"])
-def update_all_memories() -> Union[Response, tuple[Response, int]]:
-    """Update all memories based on chat history."""
+@app.route("/full-update", methods=["POST"])
+def full_update() -> Union[Response, tuple[Response, int]]:
+    """Perform a full update cycle: create new memories, update existing ones, and update relevance."""
+    try:
+        data = request.get_json()
+        if not data or "chat_messages" not in data or "delta" not in data:
+            return jsonify({"error": "Missing required fields: chat_messages, delta"}), 400
+
+        chat_messages = [
+            TextChatMessage(role=msg["role"], text=msg["text"])
+            for msg in data["chat_messages"]
+        ]
+        delta = data["delta"]
+
+        global memory_manager
+        memory_manager = run_async(memory_manager.full_update(chat_messages, delta))
+
+        return jsonify({
+            "message": "Full update completed successfully",
+            "visible_memories": [{
+                "name": memory.name,
+                "abstract": memory.abstract,
+                "memory_block": memory.memory_block
+            } for memory in memory_manager.visible_memories],
+            "relevance_map": memory_manager.relevance_map
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/update-existing-memories", methods=["POST"])
+def update_existing_memories() -> Union[Response, tuple[Response, int]]:
+    """Update all memories in the manager using LLM capabilities."""
     try:
         data = request.get_json()
         if not data or "chat_messages" not in data:
@@ -169,9 +202,9 @@ def update_all_memories() -> Union[Response, tuple[Response, int]]:
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/memories/create-new", methods=["POST"])
-def create_new_memories() -> Union[Response, tuple[Response, int]]:
-    """Create new memories based on chat history."""
+@app.route("/extract-new-memories", methods=["POST"])
+def extract_new_memories() -> Union[Response, tuple[Response, int]]:
+    """Create new memories based on chat messages and existing memories."""
     try:
         data = request.get_json()
         if not data or "chat_messages" not in data:
@@ -199,31 +232,100 @@ def create_new_memories() -> Union[Response, tuple[Response, int]]:
         print(str(e))
         return jsonify({"error": str(e)}), 500
 
-@app.route("/memories/update-visible", methods=["POST"])
-def update_visible_memories() -> Union[Response, tuple[Response, int]]:
-    """Update visible memories based on relevance to chat messages."""
+@app.route("/refresh-visible-memory-list", methods=["POST"])
+def refresh_visible_memory_list() -> Union[Response, tuple[Response, int]]:
+    """Refresh visible memories based on relevance counts."""
     try:
         data = request.get_json()
-        if not data or "chat_messages" not in data or "n" not in data:
-            return jsonify({"error": "Missing required fields: chat_messages, n"}), 400
+        if not data or "limit" not in data:
+            return jsonify({"error": "Missing required field: limit"}), 400
+
+        limit = data["limit"]
+
+        global memory_manager
+        memory_manager = run_async(memory_manager.refresh_visible_memory_list(limit))
+
+        return jsonify({
+            "message": f"Refreshed visible memories list with top {limit} memories",
+            "visible_memories": [{
+                "name": memory.name,
+                "abstract": memory.abstract,
+                "memory_block": memory.memory_block
+            } for memory in memory_manager.visible_memories]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/update-relevance-map", methods=["POST"])
+def update_relevance_map() -> Union[Response, tuple[Response, int]]:
+    """Update relevance map based on memories related to chat messages."""
+    try:
+        data = request.get_json()
+        if not data or "chat_messages" not in data or "delta" not in data:
+            return jsonify({"error": "Missing required fields: chat_messages, delta"}), 400
 
         chat_messages = [
             TextChatMessage(role=msg["role"], text=msg["text"])
             for msg in data["chat_messages"]
         ]
-        n = data["n"]
+        delta = data["delta"]
 
         global memory_manager
-        memory_manager = run_async(memory_manager.update_visible_memory_list(chat_messages, n))
+        memory_manager = run_async(memory_manager.update_relevance_map(chat_messages, delta))
 
         return jsonify({
-            "message": f"Updated visible memories to top {n} most relevant",
+            "message": "Relevance map updated successfully",
+            "relevance_map": memory_manager.relevance_map
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/update-visible-memory-list", methods=["POST"])
+def update_visible_memory_list() -> Union[Response, tuple[Response, int]]:
+    """Update visible memories based on relevance to chat messages."""
+    try:
+        data = request.get_json()
+        if not data or "chat_messages" not in data or "limit" not in data:
+            return jsonify({"error": "Missing required fields: chat_messages, limit"}), 400
+
+        chat_messages = [
+            TextChatMessage(role=msg["role"], text=msg["text"])
+            for msg in data["chat_messages"]
+        ]
+        limit = data["limit"]
+        delta = data.get("delta", 1)  # Default delta value is 1
+
+        global memory_manager
+        memory_manager = run_async(memory_manager.update_visible_memory_list(chat_messages, limit, delta))
+
+        return jsonify({
+            "message": f"Updated visible memories to top {limit} most relevant",
             "relevance_map": memory_manager.relevance_map,
             "visible_memories": [{
                 "name": memory.name,
                 "abstract": memory.abstract,
                 "memory_block": memory.memory_block
             } for memory in memory_manager.visible_memories]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/force-update-relevance-map", methods=["POST"])
+def force_update_relevance_map() -> Union[Response, tuple[Response, int]]:
+    """Update the relevance map with delta values."""
+    try:
+        data = request.get_json()
+        if not data or "delta_map" not in data:
+            return jsonify({"error": "Missing required field: delta_map"}), 400
+
+        delta_map = data["delta_map"]
+
+        global memory_manager
+        memory_manager = run_async(memory_manager.force_update_relevance_map(delta_map))
+
+        return jsonify({
+            "message": "Relevance map updated successfully",
+            "relevance_map": memory_manager.relevance_map
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -258,7 +360,7 @@ def generate_response() -> Union[Response, tuple[Response, int]]:
 
         # Generate response using the LLM model
         response = run_async(
-            memory_manager._llm_ability._llm_model.generate(chat_messages, reasoning=reasoning)
+            llm_model.generate(chat_messages, reasoning=reasoning)
         )
 
         return jsonify({
