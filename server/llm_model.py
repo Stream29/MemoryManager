@@ -14,6 +14,8 @@ from memory_common.model import TextChatMessage
 
 load_dotenv()
 
+lock: Final[asyncio.Lock] = asyncio.Lock()
+
 openai_client: Final[AsyncOpenAI] = AsyncOpenAI(
     api_key=os.getenv("DASHSCOPE_API_KEY"),
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -34,11 +36,13 @@ async def generate(messages: Sequence[TextChatMessage], reasoning: bool = True, 
     queue: Queue[str | None] = Queue()
 
     async def print_worker() -> None:
-        while True:
-            text_chunk: str | None = await queue.get()
-            if text_chunk is None:
-                break
-            print(text_chunk, end="", flush=True)
+        async with lock:
+            while True:
+                text_chunk: str | None = await queue.get()
+                if text_chunk is None:
+                    break
+                print(text_chunk, end="", flush=True)
+            print()
 
     task = create_task(print_worker())
 
@@ -46,8 +50,9 @@ async def generate(messages: Sequence[TextChatMessage], reasoning: bool = True, 
         delta: ChoiceDelta = chunk.choices[0].delta
         text: str = delta.content or ""
         buffer += text
-        queue.put_nowait(text)
-        queue.put_nowait((delta.model_extra or {}).get("reasoning_content") or "")
+        queue.put_nowait(f"\x1b[2m{text}\x1b[0m")
+        reasoning_content: str = (delta.model_extra or {}).get("reasoning_content") or ""
+        queue.put_nowait(f"\x1b[33m{reasoning_content}\x1b[0m")
     queue.put_nowait(None)
     await task
     await asyncio.sleep(1.0)

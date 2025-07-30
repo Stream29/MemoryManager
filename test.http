@@ -43,7 +43,7 @@ Content-Type: application/json
 }
 
 ### Get context memories
-GET http://localhost:8000/memory/context
+GET http://localhost:8000/memory-context
 
 ### Get a specific memory
 GET http://localhost:8000/memory/test-memory

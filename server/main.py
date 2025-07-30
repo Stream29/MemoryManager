@@ -99,7 +99,7 @@ async def remove_memory(name: str) -> JSONResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/memory/from_chat", status_code=200)
+@app.post("/memory-from-chat", status_code=200)
 async def update_memory_from_chat(request: Request) -> JSONResponse:
     """Endpoint for update_memory method."""
     try:
@@ -121,7 +121,7 @@ async def update_memory_from_chat(request: Request) -> JSONResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/memory/context", status_code=200)
+@app.get("/memory-context", status_code=200)
 async def get_context_memories() -> JSONResponse:
     """Endpoint for retrieve_context_memories method."""
     try:
@@ -184,4 +184,4 @@ async def generate_text(request: Request) -> JSONResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

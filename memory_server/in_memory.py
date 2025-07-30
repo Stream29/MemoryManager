@@ -84,8 +84,9 @@ class InMemoryMemoryRepository(MemoryRepository):
         Raises:
             ValueError: If the memory_common is not found or if duplicate names exist
         """
-        self._delegate.remove(memory)
-        self.__add_memory_impl(memory)
+        target = [memory for memory in self._delegate if memory.name == memory.name][0]
+        self._delegate.remove(target)
+        self._delegate.append(memory)
 
     @override
     async def fetch_memory_by_name(self, name: str) -> Memory | None:
