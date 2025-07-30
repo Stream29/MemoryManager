@@ -1,14 +1,14 @@
 from collections.abc import MutableSequence, Sequence
 from typing import Final, final, override
 
-from memory.convention import MemoryRepository
-from memory.model import Memory, MemoryAbstract
+from memory_common.convention import MemoryRepository
+from memory_common.model import Memory, MemoryAbstract
 
 
 @final
 class InMemoryMemoryRepository(MemoryRepository):
     """
-    In-memory implementation of the MemoryRepository interface.
+    In-memory_common implementation of the MemoryRepository interface.
     
     Stores memories in a list for simple, non-persistent storage.
     Suitable for testing and development purposes.
@@ -20,7 +20,7 @@ class InMemoryMemoryRepository(MemoryRepository):
 
     def __init__(self, delegate: Sequence[Memory] | None = None):
         """
-        Initialize the in-memory repository.
+        Initialize the in-memory_common repository.
         
         Args:
             delegate: Optional initial sequence of memories to store
@@ -33,13 +33,13 @@ class InMemoryMemoryRepository(MemoryRepository):
 
     def __add_memory_impl(self, memory: Memory) -> None:
         """
-        Internal method to add a memory with duplicate checking.
+        Internal method to add a memory_common with duplicate checking.
         
         Args:
-            memory: The memory to add
+            memory: The memory_common to add
             
         Raises:
-            ValueError: If a memory with the same name already exists
+            ValueError: If a memory_common with the same name already exists
         """
         if memory in self._delegate:
             raise ValueError(f"Memory with name {memory.name} already exists")
@@ -48,41 +48,41 @@ class InMemoryMemoryRepository(MemoryRepository):
     @override
     async def add_memory(self, memory: Memory) -> None:
         """
-        Add a new memory to the repository.
+        Add a new memory_common to the repository.
         
         Args:
-            memory: The memory to add
+            memory: The memory_common to add
             
         Raises:
-            ValueError: If a memory with the same name already exists
+            ValueError: If a memory_common with the same name already exists
         """
         self.__add_memory_impl(memory)
 
     @override
-    async def remove_memory(self, memory: Memory) -> None:
+    async def remove_memory_by_name(self, name: str) -> None:
         """
-        Remove a memory from the repository.
+        Remove a memory_common from the repository.
         
         Args:
-            memory: The memory to remove
+            name: The memory_common to remove
             
         Raises:
-            ValueError: If the memory is not found in the repository
+            ValueError: If the memory_common is not found in the repository
         """
-        self._delegate.remove(memory)
+        self._delegate.remove([memory for memory in self._delegate if memory.name == name][0])
 
     @override
     async def update_memory(self, memory: Memory) -> None:
         """
-        Update an existing memory in the repository.
+        Update an existing memory_common in the repository.
         
         Removes the old version and adds the updated version.
         
         Args:
-            memory: The memory with updated content
+            memory: The memory_common with updated content
             
         Raises:
-            ValueError: If the memory is not found or if duplicate names exist
+            ValueError: If the memory_common is not found or if duplicate names exist
         """
         self._delegate.remove(memory)
         self.__add_memory_impl(memory)
@@ -90,13 +90,13 @@ class InMemoryMemoryRepository(MemoryRepository):
     @override
     async def fetch_memory_by_name(self, name: str) -> Memory | None:
         """
-        Retrieve a specific memory by its name.
+        Retrieve a specific memory_common by its name.
         
         Args:
-            name: The name of the memory to retrieve
+            name: The name of the memory_common to retrieve
             
         Returns:
-            The memory with the specified name, or None if not found
+            The memory_common with the specified name, or None if not found
         """
         for memory in self._delegate:
             if memory.name == name:
@@ -106,12 +106,12 @@ class InMemoryMemoryRepository(MemoryRepository):
     @override
     async def fetch_all_memories_abstract(self) -> Sequence[MemoryAbstract]:
         """
-        Retrieve all memory abstracts from the repository.
+        Retrieve all memory_common abstracts from the repository.
         
         Returns lightweight MemoryAbstract objects containing only name and abstract,
-        avoiding the potentially large memory_block content to reduce network and memory burden.
+        avoiding the potentially large memory_block content to reduce network and memory_common burden.
         
         Returns:
-            Sequence of all stored memory abstracts
+            Sequence of all stored memory_common abstracts
         """
         return [MemoryAbstract(name=memory.name, abstract=memory.abstract) for memory in self._delegate]

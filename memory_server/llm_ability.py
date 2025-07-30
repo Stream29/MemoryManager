@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Final, TypeVar, final
 
 from pydantic import BaseModel
 
-from memory.convention import LlmModel
+from memory_common.convention import LlmModel
 
 if TYPE_CHECKING:
     pass
-from memory.model import (
+from memory_common.model import (
     CreateNewMemoriesRequest,
     CreateNewMemoriesResponse,
     FindAssociatedMemoriesRequest,
@@ -23,7 +23,7 @@ from memory.model import (
     UpdateSingleMemoryRequest,
     UpdateSingleMemoryResponse,
 )
-from memory.prompt import (
+from memory_server.prompt import (
     find_associated_memories_system_prompt,
     new_memory_system_prompt,
     update_memories_system_prompt,
@@ -37,13 +37,13 @@ T = TypeVar("T", bound=BaseModel)
 @dataclass
 class LlmAbility:
     """
-    Provides LLM-powered capabilities for memory management operations.
+    Provides LLM-powered capabilities for memory_common management operations.
     
     This class handles the integration with Large Language Models to perform
-    intelligent memory updates based on chat history and existing memories.
-    It provides structured generation capabilities and memory update logic.
+    intelligent memory_common updates based on chat history and existing memories.
+    It provides structured generation capabilities and memory_common update logic.
     
-    The LlmAbility provides stateless functions for processing memory data:
+    The LlmAbility provides stateless functions for processing memory_common data:
     1. Memory Updating Functions: update_memory, list_memory_to_update
     2. Memory Creation Functions: extract_new_memories
     3. Memory Association Functions: list_related_memories
@@ -58,7 +58,7 @@ class LlmAbility:
         Initialize LlmAbility with a specific LLM model.
         
         Args:
-            llm_model: The LLM model to use for memory operations
+            llm_model: The LLM model to use for memory_common operations
         """
         self._llm_model = llm_model
 
@@ -123,22 +123,22 @@ class LlmAbility:
             chat_messages: Sequence[TextChatMessage]
     ) -> Memory:
         """
-        Update a single memory based on chat history.
+        Update a single memory_common based on chat history.
         
         Args:
-            old_memory: The memory to update
-            chat_messages: Chat messages to analyze for memory updates
+            old_memory: The memory_common to update
+            chat_messages: Chat messages to analyze for memory_common updates
             
         Returns:
             Updated Memory object with new content
         """
-        # Create request for updating single memory
+        # Create request for updating single memory_common
         request = UpdateSingleMemoryRequest(
             chat_history=chat_messages,
             old_memory=old_memory
         )
 
-        # Generate updated memory block using LLM
+        # Generate updated memory_common block using LLM
         response: Final[UpdateSingleMemoryResponse] = await self._structured_generate(
             request,
             update_single_memory_system_prompt,
@@ -161,8 +161,8 @@ class LlmAbility:
         Determine which memories should be updated based on chat messages.
         
         Args:
-            current_memory: Current memory abstracts to consider for updates
-            chat_messages: Chat messages to analyze for memory updates
+            current_memory: Current memory_common abstracts to consider for updates
+            chat_messages: Chat messages to analyze for memory_common updates
             
         Returns:
             Sequence of MemoryAbstract objects that should be updated
@@ -173,7 +173,7 @@ class LlmAbility:
             old_memory=current_memory,
         )
 
-        # Get list of memory names that need updating
+        # Get list of memory_common names that need updating
         response: Final[UpdateMemoriesResponse] = await self._structured_generate(
             request,
             update_memories_system_prompt,
@@ -191,16 +191,16 @@ class LlmAbility:
         Create new memories based on chat messages and existing memories.
         
         Analyzes the chat messages to identify information that is not covered
-        by existing memories and creates new memory blocks for that information.
+        by existing memories and creates new memory_common blocks for that information.
         
         Args:
-            current_memories: Current memory abstracts to consider
-            chat_messages: Chat messages to analyze for new memory creation
+            current_memories: Current memory_common abstracts to consider
+            chat_messages: Chat messages to analyze for new memory_common creation
             
         Returns:
             Sequence of new Memory objects that should be created
         """
-        # Create request for new memory creation
+        # Create request for new memory_common creation
         request = CreateNewMemoriesRequest(
             current_memories=current_memories,
             chat_history=chat_messages
@@ -227,7 +227,7 @@ class LlmAbility:
         which memories are most relevant to the current conversation context.
         
         Args:
-            current_memories: Current memory abstracts to consider
+            current_memories: Current memory_common abstracts to consider
             chat_messages: Chat messages to find associations with
             
         Returns:

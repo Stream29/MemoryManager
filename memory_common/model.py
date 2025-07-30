@@ -7,15 +7,15 @@ from pydantic import BaseModel
 @final
 class Memory(BaseModel):
     """
-    Represents a memory unit in the memory management system.
+    Represents a memory_common unit in the memory_common management system.
     
-    A memory consists of a unique name, an abstract summary, and the actual memory content.
+    A memory_common consists of a unique name, an abstract summary, and the actual memory_common content.
     Memories are considered equal if they have the same name.
     
     Attributes:
-        name: Unique identifier for the memory
-        abstract: Brief summary or description of the memory content
-        memory_block: The actual memory content/data
+        name: Unique identifier for the memory_common
+        abstract: Brief summary or description of the memory_common content
+        memory_block: The actual memory_common content/data
     """
     name: Final[str] # type: ignore[misc]
     abstract: Final[str] # type: ignore[misc]
@@ -39,14 +39,14 @@ class Memory(BaseModel):
 @final
 class MemoryAbstract(BaseModel):
     """
-    Represents a lightweight version of a memory containing only name and abstract.
+    Represents a lightweight version of a memory_common containing only name and abstract.
     
-    Used when full memory content is not needed, such as in requests to determine
+    Used when full memory_common content is not needed, such as in requests to determine
     which memories need updating.
     
     Attributes:
-        name: Unique identifier for the memory
-        abstract: Brief summary or description of the memory content
+        name: Unique identifier for the memory_common
+        abstract: Brief summary or description of the memory_common content
     """
     name: Final[str] # type: ignore[misc]
     abstract: Final[str] # type: ignore[misc]
@@ -56,7 +56,7 @@ class TextChatMessage(BaseModel):
     """
     Represents a single message in a chat conversation.
     
-    Used to store chat history for memory update operations.
+    Used to store chat history for memory_common update operations.
     
     Attributes:
         role: The role of the message sender (e.g., "user", "assistant", "system")
@@ -70,12 +70,12 @@ class UpdateMemoriesRequest(BaseModel):
     """
     Request model for determining which memories need to be updated.
     
-    Contains chat history and existing memory abstracts to help the LLM
+    Contains chat history and existing memory_common abstracts to help the LLM
     decide which memories should be updated based on new information.
     
     Attributes:
         chat_history: Sequence of chat messages providing context
-        old_memory: Existing memory abstracts to evaluate for updates
+        old_memory: Existing memory_common abstracts to evaluate for updates
     """
     chat_history: Final[Sequence[TextChatMessage]] # type: ignore[misc]
     old_memory: Final[Sequence[MemoryAbstract]] # type: ignore[misc]
@@ -93,13 +93,13 @@ class UpdateMemoriesResponse(BaseModel):
 @final
 class UpdateSingleMemoryRequest(BaseModel):
     """
-    Request model for updating a specific memory.
+    Request model for updating a specific memory_common.
     
-    Contains chat history and the existing memory to generate an updated version.
+    Contains chat history and the existing memory_common to generate an updated version.
     
     Attributes:
         chat_history: Sequence of chat messages providing new context
-        old_memory: The existing memory to be updated
+        old_memory: The existing memory_common to be updated
     """
     chat_history: Final[Sequence[TextChatMessage]] # type: ignore[misc]
     old_memory: Final[Memory] # type: ignore[misc]
@@ -107,10 +107,10 @@ class UpdateSingleMemoryRequest(BaseModel):
 @final
 class UpdateSingleMemoryResponse(BaseModel):
     """
-    Response model containing the updated memory content.
+    Response model containing the updated memory_common content.
     
     Attributes:
-        new_memory_block: The updated memory content
+        new_memory_block: The updated memory_common content
     """
     new_memory_block: Final[str] # type: ignore[misc]
 
@@ -123,7 +123,7 @@ class CreateNewMemoriesRequest(BaseModel):
     determine what new memories should be created for uncovered information.
     
     Attributes:
-        current_memories: Existing memory abstracts to check against
+        current_memories: Existing memory_common abstracts to check against
         chat_history: Chat messages that may contain new information
     """
     current_memories: Final[Sequence[MemoryAbstract]] # type: ignore[misc]
@@ -135,7 +135,7 @@ class CreateNewMemoriesResponse(BaseModel):
     Response model containing new memories to be created.
     
     Attributes:
-        new_memories: New memory objects that should be created
+        new_memories: New memory_common objects that should be created
     """
     new_memories: Final[Sequence[Memory]] # type: ignore[misc]
 
@@ -148,7 +148,7 @@ class FindAssociatedMemoriesRequest(BaseModel):
     determine which memories are most relevant to the current conversation.
     
     Attributes:
-        current_memories: Existing memory abstracts to evaluate for relevance
+        current_memories: Existing memory_common abstracts to evaluate for relevance
         chat_messages: Chat messages to find associations with
     """
     current_memories: Final[Sequence[MemoryAbstract]] # type: ignore[misc]

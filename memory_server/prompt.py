@@ -29,18 +29,18 @@ Both your input and output should be in JSON format.
         },
         "old_memory": {
             "type": "array",
-            "description": "The current memory about the conversation.",
+            "description": "The current memory_common about the conversation.",
             "items": {
                 "type": "object",
-                "description": "A memory block that stores information about the conversation on specific topics.",
+                "description": "A memory_common block that stores information about the conversation on specific topics.",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "The unique name of the memory block, used to identify it."
+                        "description": "The unique name of the memory_common block, used to identify it."
                     },
                     "abstract": {
                         "type": "string",
-                        "description": "Tells what the memory block is about."
+                        "description": "Tells what the memory_common block is about."
                     }
                 },
                 "required": [
@@ -60,11 +60,11 @@ Both your input and output should be in JSON format.
 ! Below is the schema for output content !
 {
     "type": "object",
-    "description": "You should decide which part of the memory to update.\nOnly the memory listed in old_memory is considered.\nYou shouldn't create new memory, just update the existing ones.\nYou only need to list the `name` of the memory.\n",
+    "description": "You should decide which part of the memory_common to update.\nOnly the memory_common listed in old_memory is considered.\nYou shouldn't create new memory_common, just update the existing ones.\nYou only need to list the `name` of the memory_common.\n",
     "properties": {
         "memories_to_update": {
             "type": "array",
-            "description": "List of names of memory to update. if no memory need to be updated, leave it empty list as []",
+            "description": "List of names of memory_common to update. if no memory_common need to be updated, leave it empty list as []",
             "items": {
                 "type": "string"
             }
@@ -85,7 +85,7 @@ Both your input and output should be in JSON format.
 ! Below is the schema for input content !
 {
     "type": "object",
-    "description": "You need to update the content of memory block according to `chat_history`",
+    "description": "You need to update the content of memory_common block according to `chat_history`",
     "properties": {
         "chat_history": {
             "type": "array",
@@ -109,19 +109,19 @@ Both your input and output should be in JSON format.
         },
         "old_memory": {
             "type": "object",
-            "description": "A memory block that stores information about the conversation on specific topics.",
+            "description": "A memory_common block that stores information about the conversation on specific topics.",
             "properties": {
                 "name": {
                     "type": "string",
-                    "description": "The unique name of the memory block, used to identify it."
+                    "description": "The unique name of the memory_common block, used to identify it."
                 },
                 "abstract": {
                     "type": "string",
-                    "description": "Tells what the memory block is about."
+                    "description": "Tells what the memory_common block is about."
                 },
                 "memory_block": {
                     "type": "string",
-                    "description": "The content of the memory block."
+                    "description": "The content of the memory_common block."
                 }
             },
             "required": [
@@ -144,7 +144,7 @@ Both your input and output should be in JSON format.
     "properties": {
         "new_memory_block": {
             "type": "string",
-            "description": "The updated memory block. You should keep all the information in the old memory block, and new information from `chat_history`. You should address user as 'user' and LLM as 'assistant'."
+            "description": "The updated memory_common block. You should keep all the information in the old memory_common block, and new information from `chat_history`. You should address user as 'user' and LLM as 'assistant'."
         }
     },
     "required": [
@@ -165,18 +165,18 @@ Both your input and output should be in JSON format.
     "properties": {
         "current_memories": {
             "type": "array",
-            "description": "The memory about the conversation that needs to be checked.",
+            "description": "The memory_common about the conversation that needs to be checked.",
             "items": {
                 "type": "object",
-                "description": "A memory block that stores information about the conversation on specific topics.",
+                "description": "A memory_common block that stores information about the conversation on specific topics.",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "The unique name of the memory block, used to identify it."
+                        "description": "The unique name of the memory_common block, used to identify it."
                     },
                     "abstract": {
                         "type": "string",
-                        "description": "Tells what the memory block is about."
+                        "description": "Tells what the memory_common block is about."
                     }
                 },
                 "required": [
@@ -216,26 +216,26 @@ Both your input and output should be in JSON format.
 ! Below is the schema for output content !
 {
     "type": "object",
-    "description": "You should declare clear boundaries for the new memory blocks in `abstract` and give them a clear and unique name.",
+    "description": "You should declare clear boundaries for the new memory_common blocks in `abstract` and give them a clear and unique name.",
     "properties": {
         "new_memories": {
             "type": "array",
-            "description": "The new memories that contains new information that not covered by the old memory blocks. If all information is covered by current memory blocks, leave it empty list as [].",
+            "description": "The new memories that contains new information that not covered by the old memory_common blocks. If all information is covered by current memory_common blocks, leave it empty list as [].",
             "items": {
                 "type": "object",
-                "description": "A memory block that stores information about the conversation on specific topics.",
+                "description": "A memory_common block that stores information about the conversation on specific topics.",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "The unique name of the memory block, used to identify it."
+                        "description": "The unique name of the memory_common block, used to identify it."
                     },
                     "abstract": {
                         "type": "string",
-                        "description": "Tells what the memory block is about."
+                        "description": "Tells what the memory_common block is about."
                     },
                     "memory_block": {
                         "type": "string",
-                        "description": "The content of the memory block. You should address user as 'user' and LLM as 'assistant'."
+                        "description": "The content of the memory_common block. You should address user as 'user' and LLM as 'assistant'."
                     }
                 },
                 "required": [
@@ -262,18 +262,18 @@ Both your input and output should be in JSON format.
     "properties": {
         "current_memories": {
             "type": "array",
-            "description": "The memory about the conversation currently in use.",
+            "description": "The memory_common about the conversation currently in use.",
             "items": {
                 "type": "object",
-                "description": "A memory block that stores information about the conversation on specific topics.",
+                "description": "A memory_common block that stores information about the conversation on specific topics.",
                 "properties": {
                     "name": {
                         "type": "string",
-                        "description": "The unique name of the memory block, used to identify it."
+                        "description": "The unique name of the memory_common block, used to identify it."
                     },
                     "abstract": {
                         "type": "string",
-                        "description": "Tells what the memory block is about."
+                        "description": "Tells what the memory_common block is about."
                     }
                 },
                 "required": [
@@ -313,11 +313,11 @@ Both your input and output should be in JSON format.
 ! Below is the schema for output content !
 {
     "type": "object",
-    "description": "You should find the memory blocks that is associated with the conversation and more useful for current topic.",
+    "description": "You should find the memory_common blocks that is associated with the conversation and more useful for current topic.",
     "properties": {
         "associated_memories": {
             "type": "array",
-            "description": "The names of the memory blocks that is associated with the conversation.",
+            "description": "The names of the memory_common blocks that is associated with the conversation.",
             "items": {
                 "type": "string"
             }

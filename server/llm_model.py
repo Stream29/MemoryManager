@@ -8,8 +8,8 @@ from openai import AsyncOpenAI, AsyncStream
 from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletionMessageParam
 from openai.types.chat.chat_completion_chunk import ChoiceDelta
 
-from memory.convention import LlmModel
-from memory.model import TextChatMessage
+from memory_common.convention import LlmModel
+from memory_common.model import TextChatMessage
 
 load_dotenv()
 
