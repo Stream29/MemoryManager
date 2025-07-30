@@ -16,7 +16,6 @@ llm_model = QwenModel()
 # Create the memory_common manager with its own LLM ability
 memory_manager: MemorySession = ServerMemorySession(
     memory_repository=InMemoryMemoryRepository(),
-    visible_memories=[],
     llm_ability=LlmAbility(llm_model)
 )
 app: Final[Flask] = Flask(__name__)

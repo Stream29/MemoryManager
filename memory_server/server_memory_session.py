@@ -1,5 +1,5 @@
 from asyncio import gather
-from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import Final, final
 
 from memory_common.convention import MemoryRepository, MemorySession
@@ -10,19 +10,16 @@ from memory_server.llm_ability import LlmAbility
 @final
 class ServerMemorySession(MemorySession):
     _memory_repository: Final[MemoryRepository]
-    _visible_memories: Final[MutableSequence[Memory]]
     _llm_ability: Final[LlmAbility]
     _relevance_map: Final[MutableMapping[str, int]]
 
     def __init__(
             self,
             memory_repository: MemoryRepository,
-            visible_memories: Sequence[Memory],
             llm_ability: LlmAbility,
             relevance_map: Mapping[str, int] | None = None
     ):
         self._memory_repository = memory_repository
-        self._visible_memories = [*visible_memories]
         self._llm_ability = llm_ability
         self._relevance_map = {**relevance_map} if relevance_map else {}
 
@@ -42,7 +39,9 @@ class ServerMemorySession(MemorySession):
         await self._memory_repository.update_memory(memory)
 
     async def retrieve_context_memories(self) -> Sequence[Memory]:
-        raise NotImplementedError
+        result = [await self._memory_repository.fetch_memory_by_name(memory.name)
+                  for memory in await self._memory_repository.fetch_all_memories_abstract()]
+        return [memory for memory in result if memory is not None]
 
     async def update_memory(
             self,
@@ -50,29 +49,17 @@ class ServerMemorySession(MemorySession):
     ) -> None:
         current_memory_list: Final[
             Sequence[MemoryAbstract]] = await self._memory_repository.fetch_all_memories_abstract()
-        new_memories, related_memories, updated_memories = await gather(
+        new_memories, updated_memories = await gather(
             self._llm_ability.extract_new_memories(
-                current_memories=current_memory_list,
-                chat_messages=chat_messages
-            ),
-            self._llm_ability.list_related_memories(
                 current_memories=current_memory_list,
                 chat_messages=chat_messages
             ),
             self._get_updated_memories(current_memory_list, chat_messages)
         )
-        new_memory_manager: MemorySession = self
         for new_memory in new_memories:
-            try:
-                await new_memory_manager.force_add_memory(new_memory)
-            except ValueError as e:
-                print(e)
+            await self.force_add_memory(new_memory)
         for updated_memory in updated_memories:
-            try:
-                await new_memory_manager.force_update_memory(updated_memory)
-            except ValueError as e:
-                print(e)
-        raise NotImplementedError
+            await self.force_update_memory(updated_memory)
 
     async def _get_updated_memory(
             self,
