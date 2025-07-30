@@ -1,0 +1,328 @@
+openapi: 3.0.3
+info:
+  title: Memory Manager API
+  description: API for managing memories and generating text using LLM
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+paths:
+  /memory:
+    post:
+      summary: Add a new memory
+      description: Force add a memory to the repository
+      operationId: addMemory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - memory
+              properties:
+                memory:
+                  $ref: '#/components/schemas/Memory'
+      responses:
+        '200':
+          description: Memory added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update an existing memory
+      description: Force update a memory in the repository
+      operationId: updateMemoryByObject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - memory
+              properties:
+                memory:
+                  $ref: '#/components/schemas/Memory'
+      responses:
+        '200':
+          description: Memory updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /memory/{name}:
+    delete:
+      summary: Remove a memory by name
+      description: Force remove a memory from the repository by its name
+      operationId: removeMemory
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the memory to remove
+      responses:
+        '200':
+          description: Memory removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get a memory by name
+      description: Fetch a memory from the repository by its name
+      operationId: getMemory
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Name of the memory to fetch
+      responses:
+        '200':
+          description: Memory fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memory:
+                    $ref: '#/components/schemas/Memory'
+        '404':
+          description: Memory not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /memory/from_chat:
+    post:
+      summary: Update memory from chat
+      description: Update memory based on chat messages
+      operationId: updateMemoryFromChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - chat_messages
+              properties:
+                chat_messages:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TextChatMessage'
+      responses:
+        '200':
+          description: Memory updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /memory/context:
+    get:
+      summary: Get context memories
+      description: Retrieve memories relevant to the current context
+      operationId: getContextMemories
+      responses:
+        '200':
+          description: Context memories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Memory'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /memory/abstracts:
+    get:
+      summary: Get all memory abstracts
+      description: Fetch abstracts of all memories in the repository
+      operationId: getAllMemoryAbstracts
+      responses:
+        '200':
+          description: Memory abstracts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  abstracts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemoryAbstract'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /llm/generate:
+    post:
+      summary: Generate text using LLM
+      description: Generate text response based on input messages
+      operationId: generateText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - messages
+              properties:
+                messages:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TextChatMessage'
+                reasoning:
+                  type: boolean
+                  default: true
+                  description: Whether to include reasoning in the generation process
+      responses:
+        '200':
+          description: Text generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generated_text:
+                    type: string
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Memory:
+      type: object
+      required:
+        - name
+        - abstract
+        - memory_block
+      properties:
+        name:
+          type: string
+          description: Unique identifier for the memory
+        abstract:
+          type: string
+          description: Brief summary or description of the memory content
+        memory_block:
+          type: string
+          description: The actual memory content/data
+    MemoryAbstract:
+      type: object
+      required:
+        - name
+        - abstract
+      properties:
+        name:
+          type: string
+          description: Unique identifier for the memory
+        abstract:
+          type: string
+          description: Brief summary or description of the memory content
+    TextChatMessage:
+      type: object
+      required:
+        - role
+        - text
+      properties:
+        role:
+          type: string
+          description: The role of the message sender (e.g., "user", "assistant", "system")
+          enum: [user, assistant, system]
+        text:
+          type: string
+          description: The actual message content
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message

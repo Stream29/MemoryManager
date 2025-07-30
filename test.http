@@ -1,0 +1,66 @@
+### Add a memory
+POST http://localhost:8000/memory
+Content-Type: application/json
+
+{
+  "memory": {
+    "name": "test-memory",
+    "abstract": "This is a test memory abstract",
+    "memory_block": "This is the content of the test memory block."
+  }
+}
+
+### Update a memory
+PUT http://localhost:8000/memory
+Content-Type: application/json
+
+{
+  "memory": {
+    "name": "test-memory",
+    "abstract": "This is an updated test memory abstract",
+    "memory_block": "This is the updated content of the test memory block."
+  }
+}
+
+### Remove a memory
+DELETE http://localhost:8000/memory/test-memory
+
+### Update memory from chat
+POST http://localhost:8000/memory/from_chat
+Content-Type: application/json
+
+{
+  "chat_messages": [
+    {
+      "role": "user",
+      "text": "Hello, this is a test message."
+    },
+    {
+      "role": "assistant",
+      "text": "Hello! I'm here to help with your test."
+    }
+  ]
+}
+
+### Get context memories
+GET http://localhost:8000/memory/context
+
+### Get a specific memory
+GET http://localhost:8000/memory/test-memory
+
+### Get all memory abstracts
+GET http://localhost:8000/memory/abstracts
+
+### Generate text using LLM
+POST http://localhost:8000/llm/generate
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "text": "What is the capital of France?"
+    }
+  ],
+  "reasoning": true
+}

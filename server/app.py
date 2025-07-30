@@ -63,7 +63,7 @@ async def update_memory_by_object() -> tuple[Response, int]:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/memory/<n>", methods=["DELETE"])
+@app.route("/memory/<name>", methods=["DELETE"])
 async def remove_memory(name: str) -> tuple[Response, int]:
     """Endpoint for force_remove_memory_by_name method."""
     try:
