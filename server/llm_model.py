@@ -1,3 +1,4 @@
+import asyncio
 import os
 from asyncio import Queue, create_task
 from collections.abc import Sequence
@@ -49,6 +50,7 @@ async def generate(messages: Sequence[TextChatMessage], reasoning: bool = True, 
         queue.put_nowait((delta.model_extra or {}).get("reasoning_content") or "")
     queue.put_nowait(None)
     await task
+    await asyncio.sleep(1.0)
     return buffer
 
 

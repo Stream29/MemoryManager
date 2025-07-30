@@ -49,7 +49,7 @@ GET http://localhost:8000/memory/context
 GET http://localhost:8000/memory/test-memory
 
 ### Get all memory abstracts
-GET http://localhost:8000/memory/abstracts
+GET http://localhost:8000/memory-abstracts
 
 ### Generate text using LLM
 POST http://localhost:8000/llm/generate
