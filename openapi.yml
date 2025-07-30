@@ -146,7 +146,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /memory/from_chat:
+  /memory-from-chat:
     post:
       summary: Update memory from chat
       description: Update memory based on chat messages
@@ -187,7 +187,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /memory/context:
+  /memory-context:
     get:
       summary: Get context memories
       description: Retrieve memories relevant to the current context
@@ -210,7 +210,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /memory/abstracts:
+  /memory-abstracts:
     get:
       summary: Get all memory abstracts
       description: Fetch abstracts of all memories in the repository
