@@ -2,14 +2,16 @@ from asyncio import gather
 from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from typing import Final, final
 
-from memory.convention import MemoryRepository
+from memory.convention import MemoryManager, MemoryRepository
 from memory.llm_ability import LlmAbility
 from memory.model import Memory, MemoryAbstract, TextChatMessage
 
 
 @final
-class MemoryManager:
+class MemoryManagerImpl(MemoryManager):
     """
+    Implementation of the MemoryManager interface.
+    
     Represents a manager containing memories and LLM capabilities.
     
     A MemoryManager encapsulates the context needed for memory operations,
@@ -39,7 +41,7 @@ class MemoryManager:
             relevance_map: Mapping[str, int] | None = None
     ):
         """
-        Initialize a new MemoryManager.
+        Initialize a new MemoryManagerImpl.
         
         Args:
             memory_repository: Repository for persistent memory storage
@@ -52,7 +54,7 @@ class MemoryManager:
         self._llm_ability = llm_ability
         self.relevance_map = relevance_map or {}
 
-    async def force_add_memory(self, memory: Memory) -> "MemoryManager":
+    async def force_add_memory(self, memory: Memory) -> MemoryManager:
         """
         Add a new memory to the manager.
         
@@ -73,14 +75,14 @@ class MemoryManager:
             raise ValueError(f"Memory with name {memory.name} already exists")
 
         await self.memory_repository.add_memory(memory)
-        return MemoryManager(
+        return MemoryManagerImpl(
             memory_repository=self.memory_repository,
             visible_memories=[*self.visible_memories, memory],
             llm_ability=self._llm_ability,
             relevance_map=self.relevance_map
         )
 
-    async def force_update_relevance_map(self, delta_map: Mapping[str, int]) -> "MemoryManager":
+    async def force_update_relevance_map(self, delta_map: Mapping[str, int]) -> MemoryManager:
         """
         Update the relevance map with delta values.
         
@@ -96,14 +98,14 @@ class MemoryManager:
                 new_relevance_map[name] += delta_value
             else:
                 new_relevance_map[name] = delta_value
-        return MemoryManager(
+        return MemoryManagerImpl(
             memory_repository=self.memory_repository,
             visible_memories=self.visible_memories,
             llm_ability=self._llm_ability,
             relevance_map=new_relevance_map
         )
 
-    async def force_update_memory(self, memory: Memory) -> "MemoryManager":
+    async def force_update_memory(self, memory: Memory) -> MemoryManager:
         """
         Update a specific memory in the manager.
 
@@ -120,7 +122,7 @@ class MemoryManager:
         new_visible_memories.remove(memory)
         new_visible_memories.append(memory)
         await self.memory_repository.update_memory(memory)
-        return MemoryManager(
+        return MemoryManagerImpl(
             memory_repository=self.memory_repository,
             visible_memories=new_visible_memories,
             llm_ability=self._llm_ability,
@@ -131,7 +133,7 @@ class MemoryManager:
             self,
             chat_messages: Sequence[TextChatMessage],
             delta: int
-    ) -> "MemoryManager":
+    ) -> MemoryManager:
         """
         Perform a full update cycle: create new memories, update existing ones, and update relevance.
         
@@ -155,7 +157,7 @@ class MemoryManager:
             ),
             self._get_updated_memories(current_memory_list, chat_messages)
         )
-        new_memory_manager = self
+        new_memory_manager: MemoryManager = self
         for new_memory in new_memories:
             try:
                 new_memory_manager = await new_memory_manager.force_add_memory(new_memory)
@@ -174,7 +176,7 @@ class MemoryManager:
     async def update_existing_memories(
             self,
             chat_messages: Sequence[TextChatMessage]
-    ) -> "MemoryManager":
+    ) -> MemoryManager:
         """
         Update all memories in the manager using LLM capabilities.
         
@@ -193,7 +195,7 @@ class MemoryManager:
         )
 
         # Apply all updates to create new memory manager
-        new_memory_manager = self
+        new_memory_manager: MemoryManager = self
         for memory in updated_memories:
             new_memory_manager = await new_memory_manager.force_update_memory(memory)
         return new_memory_manager
@@ -201,7 +203,7 @@ class MemoryManager:
     async def extract_new_memories(
             self,
             chat_messages: Sequence[TextChatMessage]
-    ) -> "MemoryManager":
+    ) -> MemoryManager:
         """
         Create new memories based on chat messages and existing memories.
         
@@ -221,13 +223,13 @@ class MemoryManager:
         )
 
         # Add all new memories to the manager
-        new_manager = self
+        new_manager: MemoryManager = self
         for memory in new_memories:
             new_manager = await new_manager.force_add_memory(memory)
 
         return new_manager
 
-    async def refresh_visible_memory_list(self, limit: int) -> "MemoryManager":
+    async def refresh_visible_memory_list(self, limit: int) -> MemoryManager:
         """
         Refresh visible memories based on relevance counts.
         
@@ -258,14 +260,14 @@ class MemoryManager:
             if memory:
                 visible_memories.append(memory)
 
-        return MemoryManager(
+        return MemoryManagerImpl(
             memory_repository=self.memory_repository,
             visible_memories=visible_memories,
             llm_ability=self._llm_ability,
             relevance_map=self.relevance_map
         )
 
-    async def update_relevance_map(self, chat_messages: Sequence[TextChatMessage], delta: int) -> "MemoryManager":
+    async def update_relevance_map(self, chat_messages: Sequence[TextChatMessage], delta: int) -> MemoryManager:
         """
         Update relevance map based on memories related to chat messages.
         
@@ -293,7 +295,7 @@ class MemoryManager:
             chat_messages: Sequence[TextChatMessage],
             limit: int,
             delta: int = 1
-    ) -> "MemoryManager":
+    ) -> MemoryManager:
         """
         Update visible memories based on relevance to chat messages.
         
@@ -309,7 +311,8 @@ class MemoryManager:
         Returns:
             New MemoryManager instance with top n most relevant memories
         """
-        return await (await self.update_relevance_map(chat_messages, delta)).refresh_visible_memory_list(limit)
+        updated_manager = await self.update_relevance_map(chat_messages, delta)
+        return await updated_manager.refresh_visible_memory_list(limit)
 
     async def _get_updated_memory(
             self,

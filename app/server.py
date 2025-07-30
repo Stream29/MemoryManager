@@ -5,9 +5,10 @@ from typing import Any, Final, TypeVar, Union
 from flask import Flask, Response, jsonify, request
 
 from app.llm_model import QwenModel
+from memory.convention import MemoryManager
 from memory.in_memory import InMemoryMemoryRepository
 from memory.llm_ability import LlmAbility
-from memory.manager import MemoryManager
+from memory.memory_manager import MemoryManagerImpl
 from memory.model import Memory, TextChatMessage
 
 T = TypeVar('T')
@@ -16,7 +17,7 @@ T = TypeVar('T')
 llm_model = QwenModel()
 
 # Create the memory manager with its own LLM ability
-memory_manager = MemoryManager(
+memory_manager: MemoryManager = MemoryManagerImpl(
     memory_repository=InMemoryMemoryRepository(),
     visible_memories=[],
     llm_ability=LlmAbility(llm_model)
@@ -129,8 +130,8 @@ def get_visible_memories() -> Union[Response, tuple[Response, int]]:
     """Get all visible memories in the current manager."""
     try:
         limit = request.args.get('limit', type=int)
+        global memory_manager
         if limit:
-            global memory_manager
             memory_manager = run_async(memory_manager.refresh_visible_memory_list(limit))
 
         return jsonify({"visible_memories": [{
