@@ -13,8 +13,6 @@ if TYPE_CHECKING:
 from memory_common.model import (
     CreateNewMemoriesRequest,
     CreateNewMemoriesResponse,
-    FindAssociatedMemoriesRequest,
-    FindAssociatedMemoriesResponse,
     Memory,
     MemoryAbstract,
     TextChatMessage,
@@ -24,7 +22,6 @@ from memory_common.model import (
     UpdateSingleMemoryResponse,
 )
 from memory_server.prompt import (
-    find_associated_memories_system_prompt,
     new_memory_system_prompt,
     update_memories_system_prompt,
     update_single_memory_system_prompt,
@@ -214,36 +211,3 @@ class LlmAbility:
         )
 
         return response.new_memories
-
-    async def list_related_memories(
-            self,
-            current_memories: Sequence[MemoryAbstract],
-            chat_messages: Sequence[TextChatMessage]
-    ) -> Sequence[MemoryAbstract]:
-        """
-        Find memories that are associated with the given chat messages.
-        
-        Analyzes the chat messages against existing memories to determine
-        which memories are most relevant to the current conversation context.
-        
-        Args:
-            current_memories: Current memory_common abstracts to consider
-            chat_messages: Chat messages to find associations with
-            
-        Returns:
-            Sequence of MemoryAbstract objects that are associated with the chat messages
-        """
-        # Create request for finding associated memories
-        request = FindAssociatedMemoriesRequest(
-            current_memories=current_memories,
-            chat_messages=chat_messages
-        )
-
-        # Find associated memories using LLM
-        response: Final[FindAssociatedMemoriesResponse] = await self._structured_generate(
-            request,
-            find_associated_memories_system_prompt,
-            FindAssociatedMemoriesResponse
-        )
-
-        return [memory for memory in current_memories if memory.name in response.associated_memories]

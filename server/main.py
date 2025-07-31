@@ -1,5 +1,5 @@
 import sys
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
@@ -34,7 +34,7 @@ app = FastAPI(
 
 
 @app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
+async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle general exceptions."""
     print(f"Error processing request {request.url}: {str(exc)}")
     return JSONResponse(
